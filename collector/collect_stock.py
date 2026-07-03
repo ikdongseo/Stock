@@ -36,25 +36,36 @@ def compute_growth(series: list[dict]) -> list[dict]:
     return out
 
 
-def compute_forward_per(current_price: float, latest_net_income: float,
+def compute_forward_per(consensus: dict, current_price: float | None,
+                         latest_net_income: float | None,
                          shares_outstanding: float | None) -> dict:
     """
     포워드 PER = 현재가 / 예상 EPS
-    예상 EPS 소스가 아직 없다면(컨센서스 EPS 파싱 미구현) 최근 실적 기준 EPS로 대체 계산.
+    1순위: 증권가 컨센서스 추정 EPS/PER (consensus_scraper에서 가져온 실제 애널리스트 추정치)
+    2순위: 컨센서스가 없으면 최근 확정 실적 기준 EPS로 대체 (진짜 forward는 아님, 참고용)
     """
-    if not shares_outstanding:
+    if consensus.get("forward_eps") is not None:
+        return {
+            "forward_eps": consensus["forward_eps"],
+            "forward_per": consensus.get("forward_per"),
+            "is_estimate": True,
+            "note": "증권가 컨센서스 추정 EPS 기준 (네이버 모바일증권 API)",
+        }
+
+    if not shares_outstanding or not latest_net_income:
         return {"forward_eps": None, "forward_per": None, "is_estimate": False,
-                "note": "발행주식수 미확보로 EPS 계산 불가 - DART 재무제표 API에서 주식수 항목 추가 파싱 필요"}
+                "note": "컨센서스 EPS 없음 + 발행주식수 미확보로 계산 불가"}
     eps = latest_net_income / shares_outstanding
-    per = current_price / eps if eps else None
+    per = current_price / eps if (eps and current_price) else None
     return {"forward_eps": round(eps, 2), "forward_per": round(per, 2) if per else None,
-            "is_estimate": False, "note": "현재는 최근 확정 실적 기준 EPS. 컨센서스 추정 EPS 연동 시 진짜 forward PER로 교체 예정"}
+            "is_estimate": False, "note": "컨센서스 EPS 없어 최근 확정 실적 기준으로 대체 계산 (진짜 forward 아님)"}
 
 
 def attractiveness_score(growth_series: list[dict], target_price: float | None,
                           current_price: float | None) -> dict:
     """
     아주 단순한 1차 스코어: 최근 매출 YoY + 목표주가 괴리율만으로 구성.
+    이후 PER 밴드, 여러 해 성장 추세 등을 추가해 고도화할 예정.
     """
     latest = growth_series[-1] if growth_series else {}
     revenue_yoy = latest.get("매출액_YoY(%)")
@@ -64,9 +75,9 @@ def attractiveness_score(growth_series: list[dict], target_price: float | None,
 
     score = 50  # 기준점
     if revenue_yoy is not None:
-        score += min(max(revenue_yoy, -20), 20)
+        score += min(max(revenue_yoy, -20), 20)  # 성장률 -20~+20 범위로 가점/감점
     if upside_pct is not None:
-        score += min(max(upside_pct, -30), 30) * 0.5
+        score += min(max(upside_pct, -30), 30) * 0.5  # 괴리율 절반 가중치
 
     return {
         "score": round(score, 1),
@@ -79,7 +90,7 @@ def attractiveness_score(growth_series: list[dict], target_price: float | None,
 def main(stock_code: str):
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     current_year = datetime.date.today().year
-    years = list(range(current_year - 4, current_year))
+    years = list(range(current_year - 4, current_year))  # 최근 4개년 사업보고서
 
     dart = DartClient()
     corp_info = dart.get_corp_code(stock_code)
@@ -116,7 +127,7 @@ def main(stock_code: str):
         "price": price_info,
         "consensus": consensus,
         "forward_valuation": compute_forward_per(
-            current_price, latest_net_income, shares_outstanding=None
+            consensus, current_price, latest_net_income, shares_outstanding=None
         ),
         "attractiveness": attractiveness_score(
             growth_series, consensus.get("target_price"), current_price
