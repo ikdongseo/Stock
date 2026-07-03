@@ -22,7 +22,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from dart_client import DartClient
-from consensus_scraper import get_consensus
+from consensus_scraper import get_consensus, get_realtime_price
 from peer_analysis import get_domestic_peer_comparison, get_us_peer_comparison
 from collect_stock import (
     compute_growth, compute_forward_per, compute_week52_position, attractiveness_score,
@@ -75,7 +75,13 @@ def _collect(stock_code: str) -> dict:
     except Exception as e:
         consensus = {"error": str(e)}
 
-    price_info = build_price_info(consensus)
+    realtime = {}
+    try:
+        realtime = get_realtime_price(stock_code)
+    except Exception as e:
+        realtime = {"error": str(e)}
+
+    price_info = build_price_info(consensus, realtime)
 
     domestic_peers = {}
     try:
