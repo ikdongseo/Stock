@@ -4,8 +4,6 @@
 
 실행 예:
   export DART_API_KEY=...
-  export KIS_APP_KEY=...
-  export KIS_APP_SECRET=...
   python collect_stock.py 005930
 """
 import sys
@@ -14,11 +12,29 @@ import datetime
 from pathlib import Path
 
 from dart_client import DartClient
-from kis_client import KisClient
 from consensus_scraper import get_consensus
 from peer_analysis import get_domestic_peer_comparison, get_us_peer_comparison
 
 DATA_DIR = Path(__file__).parent.parent / "data"
+
+
+def build_price_info(consensus: dict) -> dict:
+    """
+    현재가 정보를 컨센서스 데이터(네이버)에서 뽑아 구성.
+    원래 KIS Open API로 가져왔으나, 해외 리전 백엔드에서 KIS가 접근을 막아
+    지역 제한이 없는 네이버 데이터로 대체했다.
+    """
+    if consensus.get("current_price") is None:
+        return {"error": "네이버 시세 데이터 없음", "note": "가격 데이터 없이 진행"}
+    return {
+        "current_price": consensus.get("current_price"),
+        "prev_diff": consensus.get("prev_diff"),
+        "prev_diff_text": consensus.get("prev_diff_text"),
+        "trade_date": consensus.get("trade_date"),
+        "per": consensus.get("current_per"),
+        "eps": consensus.get("current_eps"),
+        "source": "naver",
+    }
 
 
 def compute_growth(series: list[dict]) -> list[dict]:
@@ -126,18 +142,13 @@ def main(stock_code: str):
         end_de=datetime.date.today().strftime("%Y%m%d"),
     )
 
-    price_info = {}
-    try:
-        kis = KisClient(is_virtual=True)
-        price_info = kis.get_current_price(stock_code)
-    except Exception as e:
-        price_info = {"error": str(e), "note": "KIS API 키 미설정 또는 호출 실패 - 가격 데이터 없이 진행"}
-
     consensus = {}
     try:
         consensus = get_consensus(stock_code)
     except Exception as e:
         consensus = {"error": str(e)}
+
+    price_info = build_price_info(consensus)
 
     domestic_peers = {}
     try:
