@@ -132,6 +132,35 @@
     line-height: 1.5;
   }
   #status { color: var(--muted); font-size: 13px; padding: 40px 16px; text-align: center; }
+  .week52-bar {
+    position: relative;
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    margin: 12px 0 6px;
+  }
+  .week52-bar .dot {
+    position: absolute;
+    top: -4px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    transform: translateX(-50%);
+    border: 2px solid var(--panel);
+  }
+  .week52-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .peer-table-title {
+    font-size: 12px;
+    color: var(--muted);
+    margin: 14px 0 6px;
+  }
+  .peer-table-title:first-child { margin-top: 0; }
 </style>
 </head>
 <body>
@@ -193,7 +222,7 @@ function render(d) {
       </div>
       <div class="card score-card">
         <div>
-          <div class="label">매력도 스코어 (1차 버전)</div>
+          <div class="label">매력도 스코어</div>
           <div class="note">${attr.note || ''}</div>
         </div>
         <div class="score-badge">${attr.score ?? '-'}</div>
@@ -207,6 +236,19 @@ function render(d) {
     </section>
 
     <section class="panel">
+      <h2>52주 밴드 내 위치</h2>
+      <div id="week52Section"></div>
+    </section>
+
+    <section class="panel">
+      <h2>동종업계 PER 비교</h2>
+      <div class="peer-table-title">국내 (자동 분류)</div>
+      <table id="domesticPeerTable"></table>
+      <div class="peer-table-title">미국 (참고용, 회계기준·금리환경 다름)</div>
+      <table id="usPeerTable"></table>
+    </section>
+
+    <section class="panel">
       <h2>최근 공시</h2>
       <div id="disclosureList"></div>
     </section>
@@ -216,6 +258,9 @@ function render(d) {
 
   renderFinTable(d.financials_yearly || []);
   renderChart(d.financials_yearly || []);
+  renderWeek52(d.week52 || {}, price.current_price, d.consensus || {});
+  renderPeerTable('domesticPeerTable', (d.sector_comparison || {}).domestic);
+  renderPeerTable('usPeerTable', (d.sector_comparison || {}).us);
   renderDisclosures(d.recent_disclosures || []);
 }
 
@@ -259,6 +304,41 @@ function renderChart(series) {
       }
     }
   });
+}
+
+function renderWeek52(week52, currentPrice, consensus) {
+  const el = document.getElementById('week52Section');
+  const pct = week52.position_pct;
+  const low = consensus.week52_low, high = consensus.week52_high;
+  if (pct == null || low == null || high == null) {
+    el.innerHTML = '<div class="note">52주 데이터 없음</div>';
+    return;
+  }
+  const clamped = Math.max(0, Math.min(100, pct));
+  el.innerHTML = `
+    <div class="week52-bar"><div class="dot" style="left:${clamped}%"></div></div>
+    <div class="week52-labels">
+      <span>52주 최저 ${low.toLocaleString()}원</span>
+      <span>52주 최고 ${high.toLocaleString()}원</span>
+    </div>
+    <div class="note">현재가는 52주 밴드 내 ${pct}% 지점 (0%=최저, 100%=최고)</div>
+  `;
+}
+
+function renderPeerTable(elementId, peerData) {
+  const table = document.getElementById(elementId);
+  if (!peerData || !peerData.peers || !peerData.peers.length) {
+    table.innerHTML = `<tr><td class="note">${(peerData && peerData.note) || '데이터 없음'}</td></tr>`;
+    return;
+  }
+  let html = '<tr><th>종목</th><th>PER</th><th>추정PER</th></tr>';
+  peerData.peers.forEach(p => {
+    const name = p.name || p.ticker;
+    const per = p.per != null ? p.per.toFixed(2) : '-';
+    const fwd = p.forward_per != null ? p.forward_per.toFixed(2) : '-';
+    html += `<tr><td>${name}</td><td>${per}</td><td>${fwd}</td></tr>`;
+  });
+  table.innerHTML = html;
 }
 
 function renderDisclosures(list) {
