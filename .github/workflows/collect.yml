@@ -34,6 +34,11 @@ jobs:
       - name: Install dependencies
         run: pip install -r collector/requirements.txt
 
+      - name: Build company name index
+        env:
+          DART_API_KEY: ${{ secrets.DART_API_KEY }}
+        run: python collector/build_company_index.py
+
       - name: Collect data
         env:
           DART_API_KEY: ${{ secrets.DART_API_KEY }}
