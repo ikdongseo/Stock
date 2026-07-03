@@ -145,11 +145,23 @@ def get_stock(stock_code: str, force: bool = False):
     return result
 
 
+_COMPANY_CACHE: dict = {"data": None, "cached_at": 0}
+COMPANY_CACHE_TTL_SECONDS = 24 * 60 * 60  # 하루 (거의 안 바뀌는 목록이라 길게)
+
+
 @app.get("/api/companies")
 def get_companies():
+    now = time.time()
+    if _COMPANY_CACHE["data"] is not None and now - _COMPANY_CACHE["cached_at"] < COMPANY_CACHE_TTL_SECONDS:
+        return _COMPANY_CACHE["data"]
+
     dart = DartClient()
     raw = dart._download_corp_codes()
-    return [{"name": v["corp_name"], "code": code} for code, v in raw.items()]
+    result = [{"name": v["corp_name"], "code": code} for code, v in raw.items()]
+
+    _COMPANY_CACHE["data"] = result
+    _COMPANY_CACHE["cached_at"] = now
+    return result
 
 
 @app.get("/")
