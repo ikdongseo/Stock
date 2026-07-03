@@ -1,7 +1,7 @@
 {
   "stock_code": "005930",
   "corp_name": "삼성전자",
-  "updated_at": "2026-07-03T01:16:19.316120",
+  "updated_at": "2026-07-03T04:19:52.998662",
   "financials_yearly": [
     {
       "year": 2022
@@ -17,8 +17,13 @@
     }
   ],
   "price": {
-    "error": "KIS_APP_KEY / KIS_APP_SECRET 환경변수가 필요합니다.",
-    "note": "KIS API 키 미설정 또는 호출 실패 - 가격 데이터 없이 진행"
+    "stock_code": "005930",
+    "current_price": 310000,
+    "prev_diff": 24000,
+    "prev_diff_rate": 8.39,
+    "per": 47.23,
+    "eps": 6564.0,
+    "pbr": 4.84
   },
   "consensus": {
     "target_price": null,
