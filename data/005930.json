@@ -1,7 +1,7 @@
 {
   "stock_code": "005930",
   "corp_name": "삼성전자",
-  "updated_at": "2026-07-03T04:54:41.781546",
+  "updated_at": "2026-07-03T05:28:05.370596",
   "financials_yearly": [
     {
       "year": 2022,
@@ -32,28 +32,30 @@
   ],
   "price": {
     "stock_code": "005930",
-    "current_price": 312250,
-    "prev_diff": 26250,
-    "prev_diff_rate": 9.18,
-    "per": 47.57,
+    "current_price": 309500,
+    "prev_diff": 23500,
+    "prev_diff_rate": 8.22,
+    "per": 47.15,
     "eps": 6564.0,
-    "pbr": 4.88
+    "pbr": 4.84
   },
   "consensus": {
     "target_price": 501458,
     "recomm_mean": 4.04,
-    "consensus_date": "2026-07-02"
+    "consensus_date": "2026-07-02",
+    "forward_eps": 45534.0,
+    "forward_per": 6.79
   },
   "forward_valuation": {
-    "forward_eps": null,
-    "forward_per": null,
-    "is_estimate": false,
-    "note": "발행주식수 미확보로 EPS 계산 불가 - DART 재무제표 API에서 주식수 항목 추가 파싱 필요"
+    "forward_eps": 45534.0,
+    "forward_per": 6.79,
+    "is_estimate": true,
+    "note": "증권가 컨센서스 추정 EPS 기준 (네이버 모바일증권 API)"
   },
   "attractiveness": {
     "score": 75.9,
     "revenue_yoy_pct": 10.9,
-    "target_upside_pct": 60.6,
+    "target_upside_pct": 62.0,
     "note": "1차 버전 - PER밴드/여러해 추세 반영한 고도화 필요"
   },
   "recent_disclosures": [
