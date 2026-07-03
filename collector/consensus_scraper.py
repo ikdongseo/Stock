@@ -1,13 +1,17 @@
 """
-네이버 모바일증권 통합 API에서 컨센서스/밸류에이션 스냅샷을 가져온다.
+네이버 모바일증권 통합 API에서 컨센서스/밸류에이션/현재가 스냅샷을 가져온다.
 
-이 API 하나로 아래를 모두 가져올 수 있다 (화면 파싱보다 훨씬 안정적):
+이 API 하나로 아래를 모두 가져올 수 있다 (화면 파싱보다 훨씬 안정적, KIS API 불필요):
   - 목표주가/투자의견 (consensusInfo)
   - 현재 PER/EPS, 추정 PER/EPS (totalInfos)
   - 52주 최고/최저가 (totalInfos)
   - 업종코드 + 업종 내 비교종목 리스트 (industryCode / industryCompareInfo)
+  - 최근 며칠간 종가/등락 (dealTrendInfos) - 이 중 가장 최근 값을 현재가로 사용
 
 리포트 원문은 전혀 가져오지 않고 숫자만 가져온다.
+
+참고: 원래 현재가는 KIS Open API로 가져왔으나, 해외 리전에 배포한 백엔드 서버에서
+KIS가 403으로 접근을 막는 문제가 있어 네이버 데이터로 대체했다 (지역 제한이 없음).
 """
 import re
 import requests
@@ -24,7 +28,7 @@ def _find_total_info(total_infos: list[dict], code: str) -> str | None:
 
 
 def _to_number(value: str | None) -> float | None:
-    """'45,534원' / '6.81배' 같은 문자열에서 숫자만 뽑아 float로 변환"""
+    """'45,534원' / '6.81배' / '-28,500' 같은 문자열에서 숫자만 뽑아 float로 변환"""
     if not value:
         return None
     cleaned = re.sub(r"[^\d.\-]", "", value)
@@ -50,6 +54,10 @@ def get_consensus(stock_code: str) -> dict:
         "week52_high": 380000.0,
         "week52_low": 60100.0,
         "industry_code": "278",
+        "current_price": 286000,     # 최근 종가 (dealTrendInfos 중 가장 최근 값)
+        "prev_diff": -28500,         # 전일 대비 변동폭 (원)
+        "prev_diff_text": "하락",     # 상승/하락/보합
+        "trade_date": "20260702",
       }
     """
     url = f"https://m.stock.naver.com/api/stock/{stock_code}/integration"
@@ -63,6 +71,7 @@ def get_consensus(stock_code: str) -> dict:
         "current_per": None, "current_eps": None,
         "week52_high": None, "week52_low": None,
         "industry_code": None,
+        "current_price": None, "prev_diff": None, "prev_diff_text": None, "trade_date": None,
     }
 
     consensus_info = data.get("consensusInfo") or {}
@@ -87,6 +96,16 @@ def get_consensus(stock_code: str) -> dict:
     result["week52_low"] = _to_number(_find_total_info(total_infos, "lowPriceOf52Weeks"))
 
     result["industry_code"] = data.get("industryCode")
+
+    deal_trends = data.get("dealTrendInfos") or []
+    if deal_trends:
+        latest = deal_trends[0]  # 가장 최근 날짜가 배열 맨 앞
+        price = _to_number(latest.get("closePrice"))
+        result["current_price"] = int(price) if price is not None else None
+        diff = _to_number(latest.get("compareToPreviousClosePrice"))
+        result["prev_diff"] = int(diff) if diff is not None else None
+        result["prev_diff_text"] = (latest.get("compareToPreviousPrice") or {}).get("text")
+        result["trade_date"] = latest.get("bizdate")
 
     return result
 
