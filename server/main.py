@@ -2,11 +2,7 @@
 CFIT Stock 백엔드 서버
 
 collector/ 안의 기존 코드를 그대로 재사용해서, 요청이 올 때마다 그 자리에서
-DART/KIS/네이버 데이터를 모아 분석 결과를 JSON으로 돌려준다.
-
-GitHub Actions 방식과 다른 점: 서버가 계속 켜져 있으므로
-- KIS 토큰이 디스크에 자연스럽게 "하루 1회"로 재사용된다 (Actions의 cache 우회 불필요)
-- 결과를 git에 커밋할 필요 없이 즉시 프론트엔드로 반환한다
+DART/네이버 데이터를 모아 분석 결과를 JSON으로 돌려준다.
 
 배포: Render.com 등에서 build command로 `pip install -r server/requirements.txt`,
 start command로 `uvicorn server.main:app --host 0.0.0.0 --port $PORT` 사용.
@@ -23,16 +19,24 @@ sys.path.insert(0, str(COLLECTOR_DIR))
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from dart_client import DartClient
-from kis_client import KisClient
 from consensus_scraper import get_consensus
 from peer_analysis import get_domestic_peer_comparison, get_us_peer_comparison
 from collect_stock import (
     compute_growth, compute_forward_per, compute_week52_position, attractiveness_score,
+    build_price_info,
 )
 
-app = FastAPI(title="CFIT Stock API")
+
+class UTF8JSONResponse(JSONResponse):
+    """기본 JSONResponse는 Content-Type에 charset을 명시하지 않아 일부 브라우저가
+    한글을 잘못된 인코딩으로 표시하는 문제가 있다. charset=utf-8을 명시해서 해결."""
+    media_type = "application/json; charset=utf-8"
+
+
+app = FastAPI(title="CFIT Stock API", default_response_class=UTF8JSONResponse)
 
 # GitHub Pages 프론트엔드에서만 호출하도록 제한 (필요시 도메인 추가)
 app.add_middleware(
@@ -65,18 +69,13 @@ def _collect(stock_code: str) -> dict:
         end_de=datetime.date.today().strftime("%Y%m%d"),
     )
 
-    price_info = {}
-    try:
-        kis = KisClient(is_virtual=True)
-        price_info = kis.get_current_price(stock_code)
-    except Exception as e:
-        price_info = {"error": str(e), "note": "KIS API 호출 실패 - 가격 데이터 없이 진행"}
-
     consensus = {}
     try:
         consensus = get_consensus(stock_code)
     except Exception as e:
         consensus = {"error": str(e)}
+
+    price_info = build_price_info(consensus)
 
     domestic_peers = {}
     try:
