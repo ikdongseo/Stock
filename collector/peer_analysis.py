@@ -22,8 +22,12 @@ US_PEER_MAP = {
 }
 
 
-def get_domestic_peer_avg(stock_code: str, max_peers: int = 5) -> dict:
-    """국내 동종업계 peer들의 평균 PER/추정PER 계산 (peer 하나당 API 1회 호출)"""
+def get_domestic_peer_avg(stock_code: str, max_peers: int = 5, per_outlier_cutoff: float = 100.0) -> dict:
+    """
+    국내 동종업계 peer들의 평균 PER/추정PER 계산 (peer 하나당 API 1회 호출).
+    PER이 100배를 넘는 경우(이익이 거의 0에 가까운 회사) 평균을 심하게 왜곡시키므로
+    평균 계산에서는 제외한다 (peers 상세 목록에는 원래 값 그대로 남겨서 투명하게 보여준다).
+    """
     peer_codes = get_domestic_industry_peer_codes(stock_code, max_peers=max_peers)
 
     pers, fwd_pers, detail = [], [], []
@@ -32,13 +36,16 @@ def get_domestic_peer_avg(stock_code: str, max_peers: int = 5) -> dict:
             snap = get_consensus(peer["code"])
         except Exception:
             continue
-        if snap.get("current_per"):
-            pers.append(snap["current_per"])
-        if snap.get("forward_per"):
-            fwd_pers.append(snap["forward_per"])
+        per = snap.get("current_per")
+        fwd_per = snap.get("forward_per")
+        if per and per <= per_outlier_cutoff:
+            pers.append(per)
+        if fwd_per and fwd_per <= per_outlier_cutoff:
+            fwd_pers.append(fwd_per)
         detail.append({
             "code": peer["code"], "name": peer["name"],
-            "per": snap.get("current_per"), "forward_per": snap.get("forward_per"),
+            "per": per, "forward_per": fwd_per,
+            "excluded_from_avg": bool(per and per > per_outlier_cutoff),
         })
         time.sleep(0.2)  # 무료 API 트래픽 배려
 
@@ -47,8 +54,8 @@ def get_domestic_peer_avg(stock_code: str, max_peers: int = 5) -> dict:
         "avg_per": round(sum(pers) / len(pers), 2) if pers else None,
         "avg_forward_per": round(sum(fwd_pers) / len(fwd_pers), 2) if fwd_pers else None,
         "peers": detail,
+        "note": f"PER {per_outlier_cutoff:.0f}배 초과 종목은 평균 계산에서 제외 (이익 미미로 인한 왜곡 방지)",
     }
-
 
 def get_us_peer_avg(stock_code: str) -> dict:
     """설정된 미국 peer들의 평균 PER/Forward PER 계산 (Yahoo Finance 비공식 API)"""
