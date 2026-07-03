@@ -1,17 +1,15 @@
 """
-네이버 모바일증권 통합 API에서 컨센서스/밸류에이션/현재가 스냅샷을 가져온다.
+네이버 모바일증권 통합 API에서 컨센서스/밸류에이션 스냅샷을 가져온다.
+현재가는 별도의 실시간 폴링 API(get_realtime_price)에서 가져온다.
 
-이 API 하나로 아래를 모두 가져올 수 있다 (화면 파싱보다 훨씬 안정적, KIS API 불필요):
+이 파일로 아래를 모두 가져올 수 있다 (화면 파싱보다 훨씬 안정적, KIS API 불필요):
   - 목표주가/투자의견 (consensusInfo)
   - 현재 PER/EPS, 추정 PER/EPS (totalInfos)
   - 52주 최고/최저가 (totalInfos)
   - 업종코드 + 업종 내 비교종목 리스트 (industryCode / industryCompareInfo)
-  - 최근 며칠간 종가/등락 (dealTrendInfos) - 이 중 가장 최근 값을 현재가로 사용
+  - 실시간 현재가 (별도 폴링 API, get_realtime_price)
 
 리포트 원문은 전혀 가져오지 않고 숫자만 가져온다.
-
-참고: 원래 현재가는 KIS Open API로 가져왔으나, 해외 리전에 배포한 백엔드 서버에서
-KIS가 403으로 접근을 막는 문제가 있어 네이버 데이터로 대체했다 (지역 제한이 없음).
 """
 import re
 import requests
@@ -54,10 +52,6 @@ def get_consensus(stock_code: str) -> dict:
         "week52_high": 380000.0,
         "week52_low": 60100.0,
         "industry_code": "278",
-        "current_price": 286000,     # 최근 종가 (dealTrendInfos 중 가장 최근 값)
-        "prev_diff": -28500,         # 전일 대비 변동폭 (원)
-        "prev_diff_text": "하락",     # 상승/하락/보합
-        "trade_date": "20260702",
       }
     """
     url = f"https://m.stock.naver.com/api/stock/{stock_code}/integration"
@@ -71,7 +65,6 @@ def get_consensus(stock_code: str) -> dict:
         "current_per": None, "current_eps": None,
         "week52_high": None, "week52_low": None,
         "industry_code": None,
-        "current_price": None, "prev_diff": None, "prev_diff_text": None, "trade_date": None,
     }
 
     consensus_info = data.get("consensusInfo") or {}
@@ -97,15 +90,50 @@ def get_consensus(stock_code: str) -> dict:
 
     result["industry_code"] = data.get("industryCode")
 
-    deal_trends = data.get("dealTrendInfos") or []
-    if deal_trends:
-        latest = deal_trends[0]  # 가장 최근 날짜가 배열 맨 앞
-        price = _to_number(latest.get("closePrice"))
-        result["current_price"] = int(price) if price is not None else None
-        diff = _to_number(latest.get("compareToPreviousClosePrice"))
-        result["prev_diff"] = int(diff) if diff is not None else None
-        result["prev_diff_text"] = (latest.get("compareToPreviousPrice") or {}).get("text")
-        result["trade_date"] = latest.get("bizdate")
+    return result
+
+
+def get_realtime_price(stock_code: str) -> dict:
+    """
+    네이버 실시간 폴링 API에서 현재가를 가져온다 (integration API의 dealTrendInfos는
+    일별 마감 기록이라 당일 실시간 가격과 다를 수 있어 이 엔드포인트로 대체).
+
+    반환 예시:
+      {
+        "current_price": 309500,
+        "prev_diff": 23500,          # 전일 대비 (상승이면 +, 하락이면 -)
+        "prev_diff_rate": 8.22,      # 전일 대비 등락률(%)
+        "market_status": "CLOSE",    # 장중=OPEN 등
+        "traded_at": "2026-07-03T16:31:04+09:00",
+      }
+    """
+    url = "https://polling.finance.naver.com/api/realtime"
+    resp = requests.get(url, params={"query": f"SERVICE_ITEM:{stock_code}"},
+                         headers=HEADERS, timeout=10)
+    resp.raise_for_status()
+    data = resp.json()
+
+    result = {
+        "current_price": None, "prev_diff": None, "prev_diff_rate": None,
+        "market_status": None, "traded_at": None,
+    }
+
+    try:
+        item = data["result"]["areas"][0]["datas"][0]
+    except (KeyError, IndexError):
+        return result
+
+    rf = item.get("rf")  # "2"=상승, "5"=하락, "3"=보합
+    sign = 1 if rf == "2" else (-1 if rf == "5" else 0)
+
+    result["current_price"] = item.get("nv")
+    cv, cr = item.get("cv"), item.get("cr")
+    result["prev_diff"] = sign * abs(cv) if cv is not None else None
+    result["prev_diff_rate"] = sign * abs(cr) if cr is not None else None
+    result["market_status"] = item.get("ms")
+
+    over_market = item.get("nxtOverMarketPriceInfo") or {}
+    result["traded_at"] = over_market.get("localTradedAt")
 
     return result
 
@@ -124,4 +152,5 @@ def get_domestic_industry_peer_codes(stock_code: str, max_peers: int = 5) -> lis
 
 if __name__ == "__main__":
     print(get_consensus("005930"))
+    print(get_realtime_price("005930"))
     print(get_domestic_industry_peer_codes("005930"))
