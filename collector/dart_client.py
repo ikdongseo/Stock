@@ -76,20 +76,20 @@ class DartClient:
             raise KeyError(f"종목코드 {stock_code}를 찾을 수 없습니다.")
         return mapping[stock_code]
 
-    # ---------- 재무제표 ----------
-    def get_financials(self, corp_code: str, year: int, report: str = "사업보고서",
-                        fs_div: str = "CFS") -> list[dict]:
+    # ---------- 재무제표 (주요계정) ----------
+    def get_financials(self, corp_code: str, year: int, report: str = "사업보고서") -> list[dict]:
         """
-        단일회사 전체 재무제표 조회 (fnlttSinglAcntAll)
-        fs_div: CFS=연결재무제표, OFS=별도재무제표
+        단일회사 주요계정 조회 (fnlttSinglAcnt)
+        이 API는 '전체계정'(fnlttSinglAcntAll)과 달리 회사마다 다른 계정명을 쓰지 않고
+        전사 공통으로 표준화된 계정명(매출액/영업이익/당기순이익/자산총계 등)을 내려준다.
+        응답 하나에 OFS(개별)/CFS(연결)가 섞여서 나오므로 나중에 fs_div로 걸러야 한다.
         """
-        url = f"{DART_BASE}/fnlttSinglAcntAll.json"
+        url = f"{DART_BASE}/fnlttSinglAcnt.json"
         params = {
             "crtfc_key": self.api_key,
             "corp_code": corp_code,
             "bsns_year": str(year),
             "reprt_code": REPRT_CODE[report],
-            "fs_div": fs_div,
         }
         resp = requests.get(url, params=params, timeout=30)
         resp.raise_for_status()
@@ -101,40 +101,25 @@ class DartClient:
             raise RuntimeError(f"DART API 오류 [{data.get('status')}]: {data.get('message')}")
         return data.get("list", [])
 
-    # 회사마다 계정명 표기가 달라서(예: "매출액" vs "영업수익") 이름 대신
-    # IFRS/DART 표준 account_id로 매칭한다. 값은 (결과에 쓸 키 이름, 후보 account_id 목록).
-    _ACCOUNT_ID_TARGETS = [
-        ("매출액", ["ifrs-full_Revenue", "ifrs-full_RevenueFromContractsWithCustomers"]),
-        ("영업이익", ["dart_OperatingIncomeLoss"]),
-        ("당기순이익", ["ifrs-full_ProfitLoss"]),
-    ]
-    # account_id로도 못 찾았을 때를 대비한 이름 기반 백업 후보군
-    _NAME_FALLBACK = {
-        "매출액": {"매출액", "영업수익", "수익(매출액)"},
-        "영업이익": {"영업이익", "영업이익(손실)"},
-        "당기순이익": {"당기순이익", "당기순이익(손실)", "분기순이익(손실)", "반기순이익(손실)"},
-    }
-    # 손익계산서 계열만 대상으로 한다 (재무상태표의 동명 계정과 혼동 방지)
-    _INCOME_STATEMENT_NAMES = {"손익계산서", "포괄손익계산서", "연결손익계산서", "연결포괄손익계산서"}
+    # 표준화된 계정명이라 이름 매칭만으로 충분하다
+    _TARGET_ACCOUNTS = {"매출액", "영업이익", "당기순이익"}
 
     def get_key_financial_series(self, corp_code: str, years: list[int]) -> list[dict]:
         """
         여러 연도의 사업보고서에서 매출액/영업이익/당기순이익만 뽑아 시계열로 정리.
         재무제표 조회는 호출량이 많으니 요청 사이 살짝 슬립을 둡니다(무료 API 트래픽 배려).
+        연결재무제표(CFS)를 우선하고, 없으면 개별(OFS)로 대체한다(지주사 아닌 소형사 대응).
         """
         series = []
         for y in years:
             rows = self.get_financials(corp_code, y, "사업보고서")
             year_data = {"year": y}
 
-            income_rows = [r for r in rows
-                           if r.get("fs_div") == "CFS" and r.get("sj_nm") in self._INCOME_STATEMENT_NAMES]
-
-            for label, id_candidates in self._ACCOUNT_ID_TARGETS:
-                match = next((r for r in income_rows if r.get("account_id") in id_candidates), None)
+            for label in self._TARGET_ACCOUNTS:
+                candidates = [r for r in rows if r.get("account_nm") == label]
+                match = next((r for r in candidates if r.get("fs_div") == "CFS"), None)
                 if match is None:
-                    names = self._NAME_FALLBACK.get(label, set())
-                    match = next((r for r in income_rows if r.get("account_nm") in names), None)
+                    match = next((r for r in candidates if r.get("fs_div") == "OFS"), None)
                 if match is not None:
                     try:
                         year_data[label] = int(match.get("thstrm_amount", "0").replace(",", ""))
