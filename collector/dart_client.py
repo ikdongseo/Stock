@@ -95,29 +95,52 @@ class DartClient:
         resp.raise_for_status()
         data = resp.json()
         if data.get("status") != "000":
+            # 013: 해당 데이터 없음(사업보고서 미제출 등) - 조용히 빈 리스트 반환
             if data.get("status") == "013":
                 return []
             raise RuntimeError(f"DART API 오류 [{data.get('status')}]: {data.get('message')}")
         return data.get("list", [])
+
+    # 회사마다 계정명 표기가 달라서(예: "매출액" vs "영업수익") 이름 대신
+    # IFRS/DART 표준 account_id로 매칭한다. 값은 (결과에 쓸 키 이름, 후보 account_id 목록).
+    _ACCOUNT_ID_TARGETS = [
+        ("매출액", ["ifrs-full_Revenue", "ifrs-full_RevenueFromContractsWithCustomers"]),
+        ("영업이익", ["dart_OperatingIncomeLoss"]),
+        ("당기순이익", ["ifrs-full_ProfitLoss"]),
+    ]
+    # account_id로도 못 찾았을 때를 대비한 이름 기반 백업 후보군
+    _NAME_FALLBACK = {
+        "매출액": {"매출액", "영업수익", "수익(매출액)"},
+        "영업이익": {"영업이익", "영업이익(손실)"},
+        "당기순이익": {"당기순이익", "당기순이익(손실)", "분기순이익(손실)", "반기순이익(손실)"},
+    }
+    # 손익계산서 계열만 대상으로 한다 (재무상태표의 동명 계정과 혼동 방지)
+    _INCOME_STATEMENT_NAMES = {"손익계산서", "포괄손익계산서", "연결손익계산서", "연결포괄손익계산서"}
 
     def get_key_financial_series(self, corp_code: str, years: list[int]) -> list[dict]:
         """
         여러 연도의 사업보고서에서 매출액/영업이익/당기순이익만 뽑아 시계열로 정리.
         재무제표 조회는 호출량이 많으니 요청 사이 살짝 슬립을 둡니다(무료 API 트래픽 배려).
         """
-        targets = {"매출액", "영업이익", "당기순이익", "법인세비용차감전순이익(손실)"}
         series = []
         for y in years:
             rows = self.get_financials(corp_code, y, "사업보고서")
             year_data = {"year": y}
-            for row in rows:
-                name = row.get("account_nm", "")
-                if name in targets and row.get("fs_div") == "CFS":
+
+            income_rows = [r for r in rows
+                           if r.get("fs_div") == "CFS" and r.get("sj_nm") in self._INCOME_STATEMENT_NAMES]
+
+            for label, id_candidates in self._ACCOUNT_ID_TARGETS:
+                match = next((r for r in income_rows if r.get("account_id") in id_candidates), None)
+                if match is None:
+                    names = self._NAME_FALLBACK.get(label, set())
+                    match = next((r for r in income_rows if r.get("account_nm") in names), None)
+                if match is not None:
                     try:
-                        amount = int(row.get("thstrm_amount", "0").replace(",", ""))
+                        year_data[label] = int(match.get("thstrm_amount", "0").replace(",", ""))
                     except ValueError:
-                        amount = None
-                    year_data[name] = amount
+                        year_data[label] = None
+
             series.append(year_data)
             time.sleep(0.3)
         return series
