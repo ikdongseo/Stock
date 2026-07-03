@@ -48,8 +48,8 @@ class KisClient:
         _TOKEN_CACHE["expires_at"] = time.time() + int(data.get("expires_in", 86400)) - 60
         return _TOKEN_CACHE["token"]
 
-    def get_current_price(self, stock_code: str) -> dict:
-        """국내주식 현재가 시세 조회 (FHKST01010100)"""
+    def get_current_price(self, stock_code: str, max_retries: int = 3) -> dict:
+        """국내주식 현재가 시세 조회 (FHKST01010100). 일시적 연결 오류는 최대 max_retries회 재시도."""
         token = self._get_token()
         url = f"{self.base_url}/uapi/domestic-stock/v1/quotations/inquire-price"
         headers = {
@@ -62,19 +62,28 @@ class KisClient:
             "fid_cond_mrkt_div_code": "J",
             "fid_input_iscd": stock_code,
         }
-        resp = requests.get(url, headers=headers, params=params, timeout=10)
-        resp.raise_for_status()
-        data = resp.json()
-        output = data.get("output", {})
-        return {
-            "stock_code": stock_code,
-            "current_price": int(output.get("stck_prpr", 0)),
-            "prev_diff": int(output.get("prdy_vrss", 0)),
-            "prev_diff_rate": float(output.get("prdy_ctrt", 0)),
-            "per": float(output.get("per", 0) or 0),
-            "eps": float(output.get("eps", 0) or 0),
-            "pbr": float(output.get("pbr", 0) or 0),
-        }
+
+        last_error = None
+        for attempt in range(max_retries):
+            try:
+                resp = requests.get(url, headers=headers, params=params, timeout=10)
+                resp.raise_for_status()
+                data = resp.json()
+                output = data.get("output", {})
+                return {
+                    "stock_code": stock_code,
+                    "current_price": int(output.get("stck_prpr", 0)),
+                    "prev_diff": int(output.get("prdy_vrss", 0)),
+                    "prev_diff_rate": float(output.get("prdy_ctrt", 0)),
+                    "per": float(output.get("per", 0) or 0),
+                    "eps": float(output.get("eps", 0) or 0),
+                    "pbr": float(output.get("pbr", 0) or 0),
+                }
+            except requests.exceptions.RequestException as e:
+                last_error = e
+                if attempt < max_retries - 1:
+                    time.sleep(1.5 * (attempt + 1))  # 1.5초, 3초, ... 점점 늘려가며 재시도
+        raise last_error
 
 
 if __name__ == "__main__":
