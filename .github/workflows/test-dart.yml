@@ -1,0 +1,22 @@
+name: Test DART connection
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r collector/requirements.txt
+
+      - name: Run DART connection test
+        env:
+          DART_API_KEY: ${{ secrets.DART_API_KEY }}
+        run: python collector/dart_client.py
