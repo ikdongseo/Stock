@@ -2,6 +2,7 @@ name: Collect stock data
 
 on:
   schedule:
+    # 매일 한국시간 오후 4:30 (KST = UTC+9) 장 마감 후 실행 -> UTC 07:30
     - cron: "30 7 * * 1-5"
   workflow_dispatch:
     inputs:
@@ -15,6 +16,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Get today's date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache KIS token (하루 1회만 재발급되도록)
+        uses: actions/cache@v4
+        with:
+          path: data/.cache/kis_token.json
+          key: kis-token-${{ steps.date.outputs.date }}
 
       - uses: actions/setup-python@v5
         with:
