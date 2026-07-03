@@ -12,28 +12,27 @@ import datetime
 from pathlib import Path
 
 from dart_client import DartClient
-from consensus_scraper import get_consensus
+from consensus_scraper import get_consensus, get_realtime_price
 from peer_analysis import get_domestic_peer_comparison, get_us_peer_comparison
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 
 
-def build_price_info(consensus: dict) -> dict:
+def build_price_info(consensus: dict, realtime: dict) -> dict:
     """
-    현재가 정보를 컨센서스 데이터(네이버)에서 뽑아 구성.
-    원래 KIS Open API로 가져왔으나, 해외 리전 백엔드에서 KIS가 접근을 막아
-    지역 제한이 없는 네이버 데이터로 대체했다.
+    현재가는 네이버 실시간 폴링 API(realtime)에서, PER/EPS는 컨센서스 데이터에서 가져와 합친다.
     """
-    if consensus.get("current_price") is None:
-        return {"error": "네이버 시세 데이터 없음", "note": "가격 데이터 없이 진행"}
+    if realtime.get("current_price") is None:
+        return {"error": "네이버 실시간 시세 데이터 없음", "note": "가격 데이터 없이 진행"}
     return {
-        "current_price": consensus.get("current_price"),
-        "prev_diff": consensus.get("prev_diff"),
-        "prev_diff_text": consensus.get("prev_diff_text"),
-        "trade_date": consensus.get("trade_date"),
+        "current_price": realtime.get("current_price"),
+        "prev_diff": realtime.get("prev_diff"),
+        "prev_diff_rate": realtime.get("prev_diff_rate"),
+        "market_status": realtime.get("market_status"),
+        "traded_at": realtime.get("traded_at"),
         "per": consensus.get("current_per"),
         "eps": consensus.get("current_eps"),
-        "source": "naver",
+        "source": "naver_realtime",
     }
 
 
@@ -148,7 +147,13 @@ def main(stock_code: str):
     except Exception as e:
         consensus = {"error": str(e)}
 
-    price_info = build_price_info(consensus)
+    realtime = {}
+    try:
+        realtime = get_realtime_price(stock_code)
+    except Exception as e:
+        realtime = {"error": str(e)}
+
+    price_info = build_price_info(consensus, realtime)
 
     domestic_peers = {}
     try:
