@@ -1,7 +1,7 @@
 {
   "stock_code": "005930",
   "corp_name": "삼성전자",
-  "updated_at": "2026-07-03T06:51:22.433651",
+  "updated_at": "2026-07-03T13:25:10.918955",
   "financials_yearly": [
     {
       "year": 2022,
@@ -31,13 +31,14 @@
     }
   ],
   "price": {
-    "stock_code": "005930",
     "current_price": 309500,
     "prev_diff": 23500,
     "prev_diff_rate": 8.22,
-    "per": 47.15,
-    "eps": 6564.0,
-    "pbr": 4.84
+    "market_status": "CLOSE",
+    "traded_at": "2026-07-03T20:00:00.000000+09:00",
+    "per": 25.02,
+    "eps": 12372.0,
+    "source": "naver_realtime"
   },
   "consensus": {
     "target_price": 501458,
