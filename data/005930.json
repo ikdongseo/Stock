@@ -1,7 +1,7 @@
 {
   "stock_code": "005930",
   "corp_name": "삼성전자",
-  "updated_at": "2026-07-03T05:55:07.960415",
+  "updated_at": "2026-07-03T06:16:49.017706",
   "financials_yearly": [
     {
       "year": 2022,
@@ -31,21 +31,16 @@
     }
   ],
   "price": {
-    "stock_code": "005930",
-    "current_price": 309500,
-    "prev_diff": 23500,
-    "prev_diff_rate": 8.22,
-    "per": 47.15,
-    "eps": 6564.0,
-    "pbr": 4.84
+    "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))",
+    "note": "KIS API 키 미설정 또는 호출 실패 - 가격 데이터 없이 진행"
   },
   "consensus": {
     "target_price": 501458,
     "recomm_mean": 4.04,
     "consensus_date": "2026-07-02",
     "forward_eps": 45534.0,
-    "forward_per": 6.8,
-    "current_per": 25.02,
+    "forward_per": 6.86,
+    "current_per": 25.26,
     "current_eps": 12372.0,
     "week52_high": 380000.0,
     "week52_low": 60100.0,
@@ -53,67 +48,62 @@
   },
   "forward_valuation": {
     "forward_eps": 45534.0,
-    "forward_per": 6.8,
+    "forward_per": 6.86,
     "is_estimate": true,
     "note": "증권가 컨센서스 추정 EPS 기준 (네이버 모바일증권 API)"
   },
   "week52": {
-    "position_pct": 78.0
+    "position_pct": null
   },
   "sector_comparison": {
     "domestic": {
       "peer_count": 5,
-      "avg_per": 307.14,
-      "avg_forward_per": 14.47,
       "peers": [
         {
           "code": "000660",
           "name": "SK하이닉스",
-          "per": 23.29,
-          "forward_per": 7.71
+          "per": 23.5,
+          "forward_per": 7.78
         },
         {
           "code": "402340",
           "name": "SK스퀘어",
-          "per": 13.37,
-          "forward_per": 5.36
+          "per": 13.49,
+          "forward_per": 5.41
         },
         {
           "code": "042700",
           "name": "한미반도체",
-          "per": 122.92,
+          "per": 124.0,
           "forward_per": null
         },
         {
           "code": "036930",
           "name": "주성엔지니어링",
-          "per": 1330.56,
+          "per": 1342.36,
           "forward_per": null
         },
         {
           "code": "007660",
           "name": "이수페타시스",
-          "per": 45.57,
-          "forward_per": 30.33
+          "per": 46.08,
+          "forward_per": 30.67
         }
       ]
     },
     "us": {
       "peer_count": 0,
-      "avg_per": null,
-      "avg_forward_per": null,
       "peers": [],
       "error": "401 Client Error: Unauthorized for url: https://query1.finance.yahoo.com/v7/finance/quote?symbols=MU%2CTSM%2CINTC",
       "note": "Yahoo 비공식 API 호출 실패 - 형식이 바뀌었거나 차단됐을 수 있음"
     }
   },
   "attractiveness": {
-    "score": 88.1,
+    "score": 60.9,
     "revenue_yoy_pct": 10.9,
-    "target_upside_pct": 62.0,
-    "valuation_vs_domestic_sector_pct": 53.0,
-    "week52_position_pct": 78.0,
-    "note": "v2 - 성장률+목표주가 괴리율+국내섹터 상대PER+52주위치 가중합. 이동평균 등 기술적 분석은 아직 미반영, 확정 매매신호 아님(참고용)."
+    "target_upside_pct": null,
+    "week52_position_pct": null,
+    "note": "v3 - 성장률+목표주가 괴리율+52주위치 가중합. 섹터PER은 비교테이블로 별도 제공, 점수엔 미반영. 이동평균 등 기술적 분석도 아직 미반영. 확정 매매신호 아님(참고용)."
   },
   "recent_disclosures": [
     {
