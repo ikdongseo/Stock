@@ -1,4 +1,3 @@
-cat > /home/claude/cfit-stock/collector/consensus_scraper.py << 'PYEOF'
 """
 네이버 모바일증권 통합 API에서 컨센서스/밸류에이션 스냅샷을 가져온다.
 
@@ -107,5 +106,3 @@ def get_domestic_industry_peer_codes(stock_code: str, max_peers: int = 5) -> lis
 if __name__ == "__main__":
     print(get_consensus("005930"))
     print(get_domestic_industry_peer_codes("005930"))
-PYEOF
-echo done
