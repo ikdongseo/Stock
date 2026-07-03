@@ -1,4 +1,3 @@
-cat > /home/claude/cfit-stock/collector/collect_stock.py << 'PYEOF'
 """
 종목 하나에 대해 DART 재무 시계열 + 현재가 + 컨센서스 + 동종업계 비교를 모아
 성장성/포워드 PER/매력도 스코어를 계산해 data/{종목코드}.json 으로 저장합니다.
@@ -208,5 +207,3 @@ def main(stock_code: str):
 if __name__ == "__main__":
     code = sys.argv[1] if len(sys.argv) > 1 else "005930"
     main(code)
-PYEOF
-echo done
