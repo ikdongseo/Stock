@@ -1,0 +1,40 @@
+name: Collect stock data
+
+on:
+  schedule:
+    - cron: "30 7 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      stock_code:
+        description: "수집할 종목코드"
+        required: false
+        default: "005930"
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r collector/requirements.txt
+
+      - name: Collect data
+        env:
+          DART_API_KEY: ${{ secrets.DART_API_KEY }}
+          KIS_APP_KEY: ${{ secrets.KIS_APP_KEY }}
+          KIS_APP_SECRET: ${{ secrets.KIS_APP_SECRET }}
+        run: |
+          python collector/collect_stock.py "${{ github.event.inputs.stock_code || '005930' }}"
+
+      - name: Commit updated data
+        run: |
+          git config user.name "cfit-bot"
+          git config user.email "cfit-bot@users.noreply.github.com"
+          git add data/*.json
+          git diff --cached --quiet || git commit -m "chore: update stock data $(date +'%Y-%m-%d')"
+          git push
