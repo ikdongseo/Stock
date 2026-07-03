@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CFIT Stock · 기업 분석 대시보드</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --border: #262a33;
+    --text: #e8e9ec;
+    --muted: #8b909c;
+    --up: #e5484d;
+    --down: #3b82f6;
+    --accent: #d4a94b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  }
+  header {
+    padding: 24px 20px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  header .sub {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 4px;
+  }
+  #code-input {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+  }
+  #code-input input {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    flex: 1;
+  }
+  #code-input button {
+    background: var(--accent);
+    color: #1a1a1a;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  main {
+    padding: 16px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+  }
+  .card .label {
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  .card .value {
+    font-size: 22px;
+    font-weight: 700;
+  }
+  .card .value.up { color: var(--up); }
+  .card .value.down { color: var(--down); }
+  .score-card {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .score-badge {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  section.panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  section.panel h2 {
+    font-size: 14px;
+    margin: 0 0 12px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: right; padding: 6px 4px; border-bottom: 1px solid var(--border); }
+  th:first-child, td:first-child { text-align: left; color: var(--muted); }
+  .disclosure-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .disclosure-item a { color: var(--text); text-decoration: none; }
+  .disclosure-item .date { color: var(--muted); flex-shrink: 0; margin-left: 8px; }
+  .note {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+  #status { color: var(--muted); font-size: 13px; padding: 40px 16px; text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>CFIT Stock</h1>
+  <div class="sub">DART 공시 + 증권가 컨센서스 기반 기업 분석</div>
+  <div id="code-input">
+    <input id="stockCode" placeholder="종목코드 (예: 005930)" value="005930">
+    <button onclick="load()">조회</button>
+  </div>
+</header>
+
+<main id="app">
+  <div id="status">종목코드를 입력하고 조회를 눌러주세요.</div>
+</main>
+
+<script>
+async function load() {
+  const code = document.getElementById('stockCode').value.trim();
+  const app = document.getElementById('app');
+  app.innerHTML = '<div id="status">불러오는 중...</div>';
+
+  try {
+    const res = await fetch(`./data/${code}.json`);
+    if (!res.ok) throw new Error('데이터 파일을 찾을 수 없습니다. 아직 수집되지 않은 종목일 수 있습니다.');
+    const d = await res.json();
+    render(d);
+  } catch (e) {
+    app.innerHTML = `<div id="status">${e.message}</div>`;
+  }
+}
+
+function render(d) {
+  const app = document.getElementById('app');
+  const price = d.price || {};
+  const consensus = d.consensus || {};
+  const fv = d.forward_valuation || {};
+  const attr = d.attractiveness || {};
+  const upDown = (price.prev_diff || 0) >= 0 ? 'up' : 'down';
+
+  app.innerHTML = `
+    <div class="grid">
+      <div class="card">
+        <div class="label">${d.corp_name || d.stock_code} 현재가</div>
+        <div class="value ${upDown}">${price.current_price ? price.current_price.toLocaleString() + '원' : '-'}</div>
+      </div>
+      <div class="card">
+        <div class="label">증권가 목표주가</div>
+        <div class="value">${consensus.target_price ? consensus.target_price.toLocaleString() + '원' : '-'}</div>
+      </div>
+      <div class="card">
+        <div class="label">Forward PER</div>
+        <div class="value">${fv.forward_per ?? '-'}</div>
+      </div>
+      <div class="card">
+        <div class="label">목표주가 괴리율</div>
+        <div class="value">${attr.target_upside_pct != null ? attr.target_upside_pct + '%' : '-'}</div>
+      </div>
+      <div class="card score-card">
+        <div>
+          <div class="label">매력도 스코어 (1차 버전)</div>
+          <div class="note">${attr.note || ''}</div>
+        </div>
+        <div class="score-badge">${attr.score ?? '-'}</div>
+      </div>
+    </div>
+
+    <section class="panel">
+      <h2>연도별 실적 추이</h2>
+      <table id="finTable"></table>
+      <canvas id="growthChart" height="140"></canvas>
+    </section>
+
+    <section class="panel">
+      <h2>최근 공시</h2>
+      <div id="disclosureList"></div>
+    </section>
+
+    <div class="note">업데이트: ${d.updated_at ? new Date(d.updated_at).toLocaleString('ko-KR') : '-'}</div>
+  `;
+
+  renderFinTable(d.financials_yearly || []);
+  renderChart(d.financials_yearly || []);
+  renderDisclosures(d.recent_disclosures || []);
+}
+
+function renderFinTable(series) {
+  const table = document.getElementById('finTable');
+  const rows = ['연도', '매출액', '영업이익', '당기순이익'];
+  let html = '<tr>' + rows.map(r => `<th>${r}</th>`).join('') + '</tr>';
+  series.forEach(row => {
+    html += `<tr>
+      <td>${row.year}</td>
+      <td>${fmtEok(row['매출액'])}</td>
+      <td>${fmtEok(row['영업이익'])}</td>
+      <td>${fmtEok(row['당기순이익'])}</td>
+    </tr>`;
+  });
+  table.innerHTML = html;
+}
+
+function fmtEok(v) {
+  if (v == null) return '-';
+  return (v / 100000000).toLocaleString(undefined, {maximumFractionDigits: 0}) + '억';
+}
+
+function renderChart(series) {
+  const ctx = document.getElementById('growthChart');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: series.map(s => s.year),
+      datasets: [
+        { label: '매출액', data: series.map(s => s['매출액']), backgroundColor: '#d4a94b' },
+        { label: '영업이익', data: series.map(s => s['영업이익']), backgroundColor: '#3b82f6' },
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: '#e8e9ec' } } },
+      scales: {
+        x: { ticks: { color: '#8b909c' }, grid: { color: '#262a33' } },
+        y: { ticks: { color: '#8b909c' }, grid: { color: '#262a33' } },
+      }
+    }
+  });
+}
+
+function renderDisclosures(list) {
+  const el = document.getElementById('disclosureList');
+  if (!list.length) { el.innerHTML = '<div class="note">공시 데이터 없음</div>'; return; }
+  el.innerHTML = list.map(item => `
+    <div class="disclosure-item">
+      <a href="https://dart.fss.or.kr/dsaf001/main.do?rcpNo=${item.rcept_no}" target="_blank">${item.title}</a>
+      <span class="date">${item.date}</span>
+    </div>
+  `).join('');
+}
+
+load();
+</script>
+</body>
+</html>
