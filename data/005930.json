@@ -1,48 +1,48 @@
 {
   "stock_code": "005930",
   "corp_name": "삼성전자",
-  "updated_at": "2026-07-03T04:42:59.323512",
+  "updated_at": "2026-07-03T04:54:41.781546",
   "financials_yearly": [
     {
       "year": 2022,
-      "영업이익": 43376630000000,
-      "매출액": 302231360000000
+      "매출액": 302231360000000,
+      "영업이익": 43376630000000
     },
     {
       "year": 2023,
-      "영업이익": 6566976000000,
       "매출액": 258935494000000,
+      "영업이익": 6566976000000,
       "매출액_YoY(%)": -14.3,
       "영업이익_YoY(%)": -84.9
     },
     {
       "year": 2024,
-      "영업이익": 32725961000000,
       "매출액": 300870903000000,
+      "영업이익": 32725961000000,
       "매출액_YoY(%)": 16.2,
       "영업이익_YoY(%)": 398.3
     },
     {
       "year": 2025,
-      "영업이익": 43601051000000,
       "매출액": 333605938000000,
+      "영업이익": 43601051000000,
       "매출액_YoY(%)": 10.9,
       "영업이익_YoY(%)": 33.2
     }
   ],
   "price": {
     "stock_code": "005930",
-    "current_price": 311000,
-    "prev_diff": 25000,
-    "prev_diff_rate": 8.74,
-    "per": 47.38,
+    "current_price": 312250,
+    "prev_diff": 26250,
+    "prev_diff_rate": 9.18,
+    "per": 47.57,
     "eps": 6564.0,
-    "pbr": 4.86
+    "pbr": 4.88
   },
   "consensus": {
-    "target_price": null,
-    "opinion": null,
-    "opinion_count": null
+    "target_price": 501458,
+    "recomm_mean": 4.04,
+    "consensus_date": "2026-07-02"
   },
   "forward_valuation": {
     "forward_eps": null,
@@ -51,9 +51,9 @@
     "note": "발행주식수 미확보로 EPS 계산 불가 - DART 재무제표 API에서 주식수 항목 추가 파싱 필요"
   },
   "attractiveness": {
-    "score": 60.9,
+    "score": 75.9,
     "revenue_yoy_pct": 10.9,
-    "target_upside_pct": null,
+    "target_upside_pct": 60.6,
     "note": "1차 버전 - PER밴드/여러해 추세 반영한 고도화 필요"
   },
   "recent_disclosures": [
