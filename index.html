@@ -169,7 +169,8 @@
   <h1>CFIT Stock</h1>
   <div class="sub">DART 공시 + 증권가 컨센서스 기반 기업 분석</div>
   <div id="code-input">
-    <input id="stockCode" placeholder="종목코드 (예: 005930)" value="005930">
+    <input id="stockCode" list="companyList" placeholder="종목명 또는 종목코드 (예: 삼성전자)" value="삼성전자">
+    <datalist id="companyList"></datalist>
     <button onclick="load()">조회</button>
   </div>
 </header>
@@ -179,8 +180,24 @@
 </main>
 
 <script>
+let nameToCode = {};
+
+async function loadCompanyIndex() {
+  try {
+    const res = await fetch('./data/company_index.json');
+    if (!res.ok) return;
+    const list = await res.json();
+    const datalist = document.getElementById('companyList');
+    datalist.innerHTML = list.map(c => `<option value="${c.name}">`).join('');
+    nameToCode = Object.fromEntries(list.map(c => [c.name, c.code]));
+  } catch (e) {
+    // 이름 검색 인덱스가 없어도 종목코드 직접 입력은 계속 동작
+  }
+}
+
 async function load() {
-  const code = document.getElementById('stockCode').value.trim();
+  const input = document.getElementById('stockCode').value.trim();
+  const code = nameToCode[input] || input; // 이름이면 코드로 변환, 이미 코드면 그대로 사용
   const app = document.getElementById('app');
   app.innerHTML = '<div id="status">불러오는 중...</div>';
 
@@ -352,7 +369,7 @@ function renderDisclosures(list) {
   `).join('');
 }
 
-load();
+loadCompanyIndex().then(load);
 </script>
 </body>
 </html>
