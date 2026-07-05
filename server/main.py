@@ -24,6 +24,7 @@ from fastapi.responses import JSONResponse
 from dart_client import DartClient
 from consensus_scraper import get_consensus, get_realtime_price
 from peer_analysis import get_domestic_peer_comparison, get_us_peer_comparison
+from annual_forecast import get_annual_forecast
 from collect_stock import (
     compute_growth, compute_forward_per, compute_week52_position, attractiveness_score,
     build_price_info,
@@ -95,6 +96,12 @@ def _collect(stock_code: str) -> dict:
     except Exception as e:
         us_peers = {"error": str(e)}
 
+    annual_forecast = []
+    try:
+        annual_forecast = get_annual_forecast(stock_code)
+    except Exception as e:
+        annual_forecast = {"error": str(e)}
+
     current_price = price_info.get("current_price")
     latest_net_income = growth_series[-1].get("당기순이익") if growth_series else None
 
@@ -115,6 +122,7 @@ def _collect(stock_code: str) -> dict:
         "forward_valuation": forward_valuation,
         "week52": week52,
         "sector_comparison": {"domestic": domestic_peers, "us": us_peers},
+        "annual_forecast": annual_forecast,
         "attractiveness": attractiveness_score(
             growth_series, consensus.get("target_price"), current_price,
             week52.get("position_pct"),
