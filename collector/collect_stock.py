@@ -1,5 +1,5 @@
 """
-종목 하나에 대해 DART 재무 시계열 + 현재가 + 컨센서스 + 동종업계 비교를 모아
+종목 하나에 대해 DART 재무 시계열 + 현재가 + 컨센서스 + 동종업계 비교 + 향후 실적 전망을 모아
 성장성/포워드 PER/매력도 스코어를 계산해 data/{종목코드}.json 으로 저장합니다.
 
 실행 예:
@@ -14,6 +14,7 @@ from pathlib import Path
 from dart_client import DartClient
 from consensus_scraper import get_consensus, get_realtime_price
 from peer_analysis import get_domestic_peer_comparison, get_us_peer_comparison
+from annual_forecast import get_annual_forecast
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 
@@ -167,6 +168,12 @@ def main(stock_code: str):
     except Exception as e:
         us_peers = {"error": str(e)}
 
+    annual_forecast = []
+    try:
+        annual_forecast = get_annual_forecast(stock_code)
+    except Exception as e:
+        annual_forecast = {"error": str(e)}
+
     current_price = price_info.get("current_price")
     latest_net_income = growth_series[-1].get("당기순이익") if growth_series else None
 
@@ -190,6 +197,7 @@ def main(stock_code: str):
             "domestic": domestic_peers,
             "us": us_peers,
         },
+        "annual_forecast": annual_forecast,
         "attractiveness": attractiveness_score(
             growth_series, consensus.get("target_price"), current_price,
             week52.get("position_pct"),
