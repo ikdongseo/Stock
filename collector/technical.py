@@ -13,7 +13,7 @@ import requests
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; cfit-stock-collector/1.0)"}
 
 
-def get_daily_prices(stock_code: str, years_back: int = 1) -> list[dict]:
+def get_daily_prices(stock_code: str, years_back: int = 1, debug: bool = False) -> list[dict]:
     """일별 시세를 과거->최신 순으로 반환. 각 항목: date/open/high/low/close/volume"""
     end = datetime.date.today()
     start = end - datetime.timedelta(days=365 * years_back + 30)
@@ -27,6 +27,9 @@ def get_daily_prices(stock_code: str, years_back: int = 1) -> list[dict]:
     }
     resp = requests.get(url, params=params, headers=HEADERS, timeout=15)
     resp.raise_for_status()
+    if debug:
+        print(f"[technical] status={resp.status_code} len={len(resp.text)}")
+        print(f"[technical] raw head (repr): {resp.text[:200]!r}")
     data = json.loads(resp.text)
     if not data or len(data) < 2:
         return []
@@ -123,7 +126,7 @@ def macd_snapshot(closes: list[float]) -> dict:
     }
 
 
-def get_technical_snapshot(stock_code: str) -> dict:
+def get_technical_snapshot(stock_code: str, debug: bool = False) -> dict:
     """
     단기 기술적 지표 스냅샷 (최신 값 기준).
     반환 예시:
@@ -132,7 +135,7 @@ def get_technical_snapshot(stock_code: str) -> dict:
         "rsi14": ..., "macd": {...}, "volume_surge_ratio": 1.8,
       }
     """
-    prices = get_daily_prices(stock_code, years_back=1)
+    prices = get_daily_prices(stock_code, years_back=1, debug=debug)
     if len(prices) < 60:
         return {"error": f"일별시세 데이터 부족 (받은 개수: {len(prices)})"}
 
