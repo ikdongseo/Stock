@@ -14,7 +14,6 @@ from pathlib import Path
 from dart_client import DartClient
 from consensus_scraper import get_consensus, get_realtime_price, get_supply_demand_trend
 from peer_analysis import get_domestic_peer_comparison, get_us_peer_comparison
-from manual_forecasts import get_manual_annual_forecast
 from technical import get_technical_snapshot
 
 DATA_DIR = Path(__file__).parent.parent / "data"
@@ -112,9 +111,9 @@ def compute_short_term_score(technical: dict, prev_diff: float | None) -> dict:
     rsi14 = technical.get("rsi14")
     if rsi14 is not None:
         if rsi14 < 30:
-            score += 10  # 과매도 - 반등 기대
+            score += 10
         elif rsi14 > 70:
-            score -= 10  # 과매수 - 조정 위험
+            score -= 10
     factors["rsi14"] = rsi14
 
     histogram = (technical.get("macd") or {}).get("histogram")
@@ -125,9 +124,9 @@ def compute_short_term_score(technical: dict, prev_diff: float | None) -> dict:
     surge = technical.get("volume_surge_ratio")
     if surge is not None and surge > 1.5:
         if prev_diff is not None and prev_diff > 0:
-            score += 10  # 거래량 실리며 상승 - 관심 집중
+            score += 10
         elif prev_diff is not None and prev_diff < 0:
-            score -= 5   # 거래량 실리며 하락 - 투매 경계
+            score -= 5
     factors["volume_surge_ratio"] = surge
 
     return {
@@ -246,8 +245,6 @@ def main(stock_code: str):
     except Exception as e:
         us_peers = {"error": str(e)}
 
-    annual_forecast = get_manual_annual_forecast(stock_code)
-
     technical = {}
     try:
         technical = get_technical_snapshot(stock_code)
@@ -289,7 +286,6 @@ def main(stock_code: str):
             "domestic": domestic_peers,
             "us": us_peers,
         },
-        "annual_forecast": annual_forecast,
         "technical": technical,
         "supply_demand": supply_demand,
         "scores": {
