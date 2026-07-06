@@ -2,15 +2,20 @@
 네이버 fchart API로 과거 일별시세를 가져와 단기 기술적 지표(이동평균/RSI/MACD/거래량)를 계산한다.
 
 fchart.stock.naver.com은 인증/세션 없이 그냥 GET으로 호출 가능한, 국내 퀀트 개발자들이
-널리 쓰는 공개 엔드포인트다 (wisereport처럼 봇 차단이 없음).
-응답은 [["날짜","시가","고가","저가","종가","거래량","외국인소진율"], ["20240102",...], ...]
-형태의 JSON 배열이라 json.loads로 바로 파싱된다.
+널리 쓰는 공개 엔드포인트다. 다만 응답이 완전한 JSON은 아니다 (헤더 행은 홑따옴표를 쓰고,
+행 사이에 탭/빈 줄이 섞여 있어 json.loads가 깨진다). 데이터 행 자체는 큰따옴표로 된
+["20250609", 60400, 60400, 59500, 59800, 19609659, 49.81] 형태라 정규식으로 직접 추출한다.
 """
-import json
+import re
 import datetime
 import requests
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; cfit-stock-collector/1.0)"}
+
+# ["20250609", 60400, 60400, 59500, 59800, 19609659, ...] 형태의 데이터 행만 매칭
+ROW_PATTERN = re.compile(
+    r'\[\s*"(\d{8})"\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)'
+)
 
 
 def get_daily_prices(stock_code: str, years_back: int = 1, debug: bool = False) -> list[dict]:
@@ -29,23 +34,21 @@ def get_daily_prices(stock_code: str, years_back: int = 1, debug: bool = False) 
     resp.raise_for_status()
     if debug:
         print(f"[technical] status={resp.status_code} len={len(resp.text)}")
-        print(f"[technical] raw head (repr): {resp.text[:200]!r}")
-    data = json.loads(resp.text)
-    if not data or len(data) < 2:
-        return []
+
+    matches = ROW_PATTERN.findall(resp.text)
+    if debug:
+        print(f"[technical] matched rows={len(matches)}")
 
     rows = []
-    for row in data[1:]:
-        if not row or len(row) < 6:
-            continue
+    for date_str, o, h, l, c, v in matches:
         try:
             rows.append({
-                "date": str(row[0]).strip(),
-                "open": float(row[1]), "high": float(row[2]),
-                "low": float(row[3]), "close": float(row[4]),
-                "volume": float(row[5]),
+                "date": date_str,
+                "open": float(o), "high": float(h),
+                "low": float(l), "close": float(c),
+                "volume": float(v),
             })
-        except (ValueError, TypeError):
+        except ValueError:
             continue
     return rows
 
