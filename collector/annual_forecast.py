@@ -38,7 +38,11 @@ def get_annual_forecast(stock_code: str, debug: bool = False) -> list[dict]:
     debug=True면 실패 원인을 print로 남긴다 (Render 로그에서 확인 가능).
     """
     page_url = f"https://navercomp.wisereport.co.kr/v2/company/c1010001.aspx?cmp_cd={stock_code}"
-    resp = requests.get(page_url, headers=HEADERS, timeout=10)
+
+    session = requests.Session()
+    session.headers.update(HEADERS)
+
+    resp = session.get(page_url, timeout=10)
     resp.raise_for_status()
     if debug:
         print(f"[annual_forecast] page fetch status={resp.status_code} len={len(resp.text)}")
@@ -57,7 +61,11 @@ def get_annual_forecast(stock_code: str, debug: bool = False) -> list[dict]:
         "encparam": encparam,
         "id": FIXED_TABLE_ID,
     }
-    resp2 = requests.get(ajax_url, params=params, headers=HEADERS, timeout=10)
+    ajax_headers = {
+        "Referer": page_url,
+        "X-Requested-With": "XMLHttpRequest",
+    }
+    resp2 = session.get(ajax_url, params=params, headers=ajax_headers, timeout=10)
     resp2.raise_for_status()
     if debug:
         print(f"[annual_forecast] ajax fetch status={resp2.status_code} len={len(resp2.text)}")
