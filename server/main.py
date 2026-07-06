@@ -99,7 +99,7 @@ def _collect(stock_code: str) -> dict:
 
     technical = {}
     try:
-        technical = get_technical_snapshot(stock_code)
+        technical = get_technical_snapshot(stock_code, debug=True)
     except Exception as e:
         technical = {"error": str(e)}
 
