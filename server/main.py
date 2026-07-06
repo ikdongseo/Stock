@@ -24,7 +24,6 @@ from fastapi.responses import JSONResponse
 from dart_client import DartClient
 from consensus_scraper import get_consensus, get_realtime_price, get_supply_demand_trend
 from peer_analysis import get_domestic_peer_comparison, get_us_peer_comparison
-from manual_forecasts import get_manual_annual_forecast
 from technical import get_technical_snapshot
 from collect_stock import (
     compute_growth, compute_forward_per, compute_week52_position,
@@ -46,7 +45,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://ikdongseo.github.io",
-        "http://localhost:8000",  # 로컬 테스트용
+        "http://localhost:8000",
     ],
     allow_methods=["GET"],
     allow_headers=["*"],
@@ -98,8 +97,6 @@ def _collect(stock_code: str) -> dict:
     except Exception as e:
         us_peers = {"error": str(e)}
 
-    annual_forecast = get_manual_annual_forecast(stock_code)
-
     technical = {}
     try:
         technical = get_technical_snapshot(stock_code)
@@ -138,7 +135,6 @@ def _collect(stock_code: str) -> dict:
         "forward_valuation": forward_valuation,
         "week52": week52,
         "sector_comparison": {"domestic": domestic_peers, "us": us_peers},
-        "annual_forecast": annual_forecast,
         "technical": technical,
         "supply_demand": supply_demand,
         "scores": {
