@@ -161,6 +161,28 @@
     margin: 14px 0 6px;
   }
   .peer-table-title:first-child { margin-top: 0; }
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .score-mini-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 6px;
+    text-align: center;
+  }
+  .score-mini-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .score-mini-value {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--accent);
+  }
 </style>
 </head>
 <body>
@@ -198,7 +220,7 @@ async function loadCompanyIndex() {
 
 async function load() {
   const input = document.getElementById('stockCode').value.trim();
-  const code = nameToCode[input] || input; // 이름이면 코드로 변환, 이미 코드면 그대로 사용
+  const code = nameToCode[input] || input;
   const app = document.getElementById('app');
   app.innerHTML = '<div id="status">불러오는 중... (서버가 잠시 쉬고 있었다면 최대 1분 정도 걸릴 수 있어요)</div>';
 
@@ -224,7 +246,9 @@ function render(d) {
   const price = d.price || {};
   const consensus = d.consensus || {};
   const fv = d.forward_valuation || {};
-  const attr = d.attractiveness || {};
+  const scores = d.scores || {};
+  const targetUpside = (scores.long_term || {}).factors?.target_upside_pct
+    ?? (scores.mid_term || {}).factors?.target_upside_pct;
   const upDown = (price.prev_diff || 0) >= 0 ? 'up' : 'down';
 
   app.innerHTML = `
@@ -243,16 +267,24 @@ function render(d) {
       </div>
       <div class="card">
         <div class="label">목표주가 괴리율</div>
-        <div class="value">${attr.target_upside_pct != null ? attr.target_upside_pct + '%' : '-'}</div>
-      </div>
-      <div class="card score-card">
-        <div>
-          <div class="label">매력도 스코어</div>
-          <div class="note">${attr.note || ''}</div>
-        </div>
-        <div class="score-badge">${attr.score ?? '-'}</div>
+        <div class="value">${targetUpside != null ? targetUpside + '%' : '-'}</div>
       </div>
     </div>
+
+    <section class="panel">
+      <h2>매매 타점 스코어 (단기/중기/장기, 참고용)</h2>
+      <div id="scoresSection"></div>
+    </section>
+
+    <section class="panel">
+      <h2>기술적 지표 (단기)</h2>
+      <div id="technicalSection"></div>
+    </section>
+
+    <section class="panel">
+      <h2>수급 동향 (중기, 최근 5거래일)</h2>
+      <div id="supplyDemandSection"></div>
+    </section>
 
     <section class="panel">
       <h2>연도별 실적 추이</h2>
@@ -281,11 +313,14 @@ function render(d) {
     <div class="note">업데이트: ${d.updated_at ? new Date(d.updated_at).toLocaleString('ko-KR') : '-'}</div>
   `;
 
+  renderScores(scores);
+  renderTechnical(d.technical || {});
+  renderSupplyDemand(d.supply_demand || {});
   renderFinTable(d.financials_yearly || []);
   renderChart(d.financials_yearly || []);
   renderWeek52(d.week52 || {}, price.current_price, d.consensus || {});
-  renderPeerTable('domesticPeerTable', (d.sector_comparison || {}).domestic);
-  renderPeerTable('usPeerTable', (d.sector_comparison || {}).us);
+  renderPeerTable('domesticPeerTable', (d.sector_comparison || {}).domestic, d.corp_name, price.current_price ? fv.forward_per : null, true);
+  renderPeerTable('usPeerTable', (d.sector_comparison || {}).us, null, null, false);
   renderDisclosures(d.recent_disclosures || []);
 }
 
@@ -350,7 +385,7 @@ function renderWeek52(week52, currentPrice, consensus) {
   `;
 }
 
-function renderPeerTable(elementId, peerData) {
+function renderPeerTable(elementId, peerData, ownName, ownForwardPer, isDomestic) {
   const table = document.getElementById(elementId);
   if (!peerData || !peerData.peers || !peerData.peers.length) {
     table.innerHTML = `<tr><td class="note">${(peerData && peerData.note) || '데이터 없음'}</td></tr>`;
@@ -364,6 +399,68 @@ function renderPeerTable(elementId, peerData) {
     html += `<tr><td>${name}</td><td>${per}</td><td>${fwd}</td></tr>`;
   });
   table.innerHTML = html;
+}
+
+function renderScores(scores) {
+  const el = document.getElementById('scoresSection');
+  const items = [
+    { key: 'short_term', label: '단기 (며칠~몇 주)' },
+    { key: 'mid_term', label: '중기 (몇 주~1분기)' },
+    { key: 'long_term', label: '장기 (분기~년)' },
+  ];
+  el.innerHTML = `
+    <div class="score-grid">
+      ${items.map(item => {
+        const s = scores[item.key] || {};
+        const val = s.score != null ? s.score : '-';
+        return `
+          <div class="score-mini-card">
+            <div class="score-mini-label">${item.label}</div>
+            <div class="score-mini-value">${val}</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+    <div class="note">점수만 제공하며 매수/매도 판단은 직접 하셔야 합니다. 기준점 50, 범위 0~100.</div>
+  `;
+}
+
+function renderTechnical(technical) {
+  const el = document.getElementById('technicalSection');
+  if (technical.error) {
+    el.innerHTML = `<div class="note">${technical.error}</div>`;
+    return;
+  }
+  const macd = technical.macd || {};
+  el.innerHTML = `
+    <table>
+      <tr><td>이동평균 배열</td><td>${technical.ma_alignment ?? '-'}</td></tr>
+      <tr><td>5일선</td><td>${technical.ma5 != null ? technical.ma5.toLocaleString() : '-'}</td></tr>
+      <tr><td>20일선</td><td>${technical.ma20 != null ? technical.ma20.toLocaleString() : '-'}</td></tr>
+      <tr><td>60일선</td><td>${technical.ma60 != null ? technical.ma60.toLocaleString() : '-'}</td></tr>
+      <tr><td>RSI(14)</td><td>${technical.rsi14 ?? '-'}</td></tr>
+      <tr><td>MACD 히스토그램</td><td>${macd.histogram ?? '-'}</td></tr>
+      <tr><td>거래량 배율(20일 대비)</td><td>${technical.volume_surge_ratio != null ? technical.volume_surge_ratio + '배' : '-'}</td></tr>
+    </table>
+  `;
+}
+
+function renderSupplyDemand(sd) {
+  const el = document.getElementById('supplyDemandSection');
+  if (sd.error) {
+    el.innerHTML = `<div class="note">${sd.error}</div>`;
+    return;
+  }
+  const fmt = (v) => v != null ? Math.round(v).toLocaleString() + '주' : '-';
+  el.innerHTML = `
+    <table>
+      <tr><td>외국인 연속 순매수/매도일</td><td>${sd.foreigner_streak_days ?? '-'}일</td></tr>
+      <tr><td>외국인 순매수 합계</td><td>${fmt(sd.foreigner_net_sum)}</td></tr>
+      <tr><td>기관 순매수 합계</td><td>${fmt(sd.institution_net_sum)}</td></tr>
+      <tr><td>개인 순매수 합계</td><td>${fmt(sd.individual_net_sum)}</td></tr>
+    </table>
+    <div class="note">연속일수: 음수=연속 순매도, 양수=연속 순매수</div>
+  `;
 }
 
 function renderDisclosures(list) {
