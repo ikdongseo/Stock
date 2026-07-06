@@ -98,7 +98,7 @@ def _collect(stock_code: str) -> dict:
 
     annual_forecast = []
     try:
-        annual_forecast = get_annual_forecast(stock_code)
+        annual_forecast = get_annual_forecast(stock_code, debug=True)
     except Exception as e:
         annual_forecast = {"error": str(e)}
 
