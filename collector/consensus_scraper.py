@@ -1,13 +1,12 @@
 """
-네이버 모바일증권 통합 API에서 컨센서스/밸류에이션 스냅샷을 가져온다.
-현재가는 별도의 실시간 폴링 API(get_realtime_price)에서 가져온다.
+네이버 모바일증권 통합 API에서 컨센서스/밸류에이션/현재가/수급 스냅샷을 가져온다.
 
-이 파일로 아래를 모두 가져올 수 있다 (화면 파싱보다 훨씬 안정적, KIS API 불필요):
+이 API 하나로 아래를 모두 가져올 수 있다 (화면 파싱보다 훨씬 안정적, KIS API 불필요):
   - 목표주가/투자의견 (consensusInfo)
   - 현재 PER/EPS, 추정 PER/EPS (totalInfos)
   - 52주 최고/최저가 (totalInfos)
   - 업종코드 + 업종 내 비교종목 리스트 (industryCode / industryCompareInfo)
-  - 실시간 현재가 (별도 폴링 API, get_realtime_price)
+  - 최근 며칠간 종가/등락/외국인·기관·개인 순매수 (dealTrendInfos)
 
 리포트 원문은 전혀 가져오지 않고 숫자만 가져온다.
 """
@@ -52,6 +51,10 @@ def get_consensus(stock_code: str) -> dict:
         "week52_high": 380000.0,
         "week52_low": 60100.0,
         "industry_code": "278",
+        "current_price": 286000,     # 최근 종가 (dealTrendInfos 중 가장 최근 값)
+        "prev_diff": -28500,         # 전일 대비 변동폭 (원)
+        "prev_diff_text": "하락",     # 상승/하락/보합
+        "trade_date": "20260702",
       }
     """
     url = f"https://m.stock.naver.com/api/stock/{stock_code}/integration"
@@ -65,6 +68,7 @@ def get_consensus(stock_code: str) -> dict:
         "current_per": None, "current_eps": None,
         "week52_high": None, "week52_low": None,
         "industry_code": None,
+        "current_price": None, "prev_diff": None, "prev_diff_text": None, "trade_date": None,
     }
 
     consensus_info = data.get("consensusInfo") or {}
@@ -90,13 +94,23 @@ def get_consensus(stock_code: str) -> dict:
 
     result["industry_code"] = data.get("industryCode")
 
+    deal_trends = data.get("dealTrendInfos") or []
+    if deal_trends:
+        latest = deal_trends[0]  # 가장 최근 날짜가 배열 맨 앞
+        price = _to_number(latest.get("closePrice"))
+        result["current_price"] = int(price) if price is not None else None
+        diff = _to_number(latest.get("compareToPreviousClosePrice"))
+        result["prev_diff"] = int(diff) if diff is not None else None
+        result["prev_diff_text"] = (latest.get("compareToPreviousPrice") or {}).get("text")
+        result["trade_date"] = latest.get("bizdate")
+
     return result
 
 
 def get_realtime_price(stock_code: str) -> dict:
     """
-    네이버 실시간 폴링 API에서 현재가를 가져온다 (integration API의 dealTrendInfos는
-    일별 마감 기록이라 당일 실시간 가격과 다를 수 있어 이 엔드포인트로 대체).
+    네이버 실시간 폴링 API에서 현재가를 가져온다 (dealTrendInfos는 일별 마감 기록이라
+    당일 실시간 가격과 다를 수 있어 이 엔드포인트로 대체).
 
     반환 예시:
       {
@@ -138,6 +152,56 @@ def get_realtime_price(stock_code: str) -> dict:
     return result
 
 
+def get_supply_demand_trend(stock_code: str, days: int = 5) -> dict:
+    """
+    최근 며칠간 외국인/기관/개인 순매수 수량 추이 (dealTrendInfos 재사용, 추가 API 호출 없음).
+
+    반환 예시:
+      {
+        "days_used": 5,
+        "foreigner_net_sum": -12345678,   # 최근 N일 외국인 순매수 수량 합 (매도우위면 음수)
+        "institution_net_sum": -3456789,
+        "individual_net_sum": 15802467,
+        "foreigner_streak_days": -3,      # 음수=연속 순매도일수, 양수=연속 순매수일수
+      }
+    """
+    url = f"https://m.stock.naver.com/api/stock/{stock_code}/integration"
+    resp = requests.get(url, headers=HEADERS, timeout=10)
+    resp.raise_for_status()
+    data = resp.json()
+
+    deal_trends = data.get("dealTrendInfos") or []
+    recent = deal_trends[:days]  # 배열 맨 앞이 최신
+
+    foreigner_vals = [_to_number(d.get("foreignerPureBuyQuant")) for d in recent]
+    institution_vals = [_to_number(d.get("organPureBuyQuant")) for d in recent]
+    individual_vals = [_to_number(d.get("individualPureBuyQuant")) for d in recent]
+
+    def safe_sum(vals):
+        nums = [v for v in vals if v is not None]
+        return sum(nums) if nums else None
+
+    # 최신 날짜부터 연속으로 같은 방향(순매수/순매도)인 일수 계산
+    streak = 0
+    for v in foreigner_vals:
+        if v is None:
+            break
+        if streak == 0:
+            streak = 1 if v > 0 else (-1 if v < 0 else 0)
+        elif (streak > 0 and v > 0) or (streak < 0 and v < 0):
+            streak += 1 if streak > 0 else -1
+        else:
+            break
+
+    return {
+        "days_used": len([v for v in foreigner_vals if v is not None]),
+        "foreigner_net_sum": safe_sum(foreigner_vals),
+        "institution_net_sum": safe_sum(institution_vals),
+        "individual_net_sum": safe_sum(individual_vals),
+        "foreigner_streak_days": streak,
+    }
+
+
 def get_domestic_industry_peer_codes(stock_code: str, max_peers: int = 5) -> list[dict]:
     """같은 API 응답의 industryCompareInfo에서 네이버가 골라준 국내 동종업계 peer 목록을 가져온다."""
     url = f"https://m.stock.naver.com/api/stock/{stock_code}/integration"
@@ -152,5 +216,4 @@ def get_domestic_industry_peer_codes(stock_code: str, max_peers: int = 5) -> lis
 
 if __name__ == "__main__":
     print(get_consensus("005930"))
-    print(get_realtime_price("005930"))
     print(get_domestic_industry_peer_codes("005930"))
