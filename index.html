@@ -183,6 +183,31 @@
     font-weight: 800;
     color: var(--accent);
   }
+  #holdingInputs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  #holdingInputs input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    flex: 1;
+    min-width: 0;
+  }
+  #holdingInputs button {
+    background: var(--accent);
+    color: #1a1a1a;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    white-space: nowrap;
+  }
 </style>
 </head>
 <body>
@@ -241,7 +266,10 @@ async function load() {
   }
 }
 
+let lastData = null;
+
 function render(d) {
+  lastData = d;
   const app = document.getElementById('app');
   const price = d.price || {};
   const consensus = d.consensus || {};
@@ -270,6 +298,16 @@ function render(d) {
         <div class="value">${targetUpside != null ? targetUpside + '%' : '-'}</div>
       </div>
     </div>
+
+    <section class="panel">
+      <h2>내 매수 정보 → 구간별 참고 의견</h2>
+      <div id="holdingInputs">
+        <input id="avgPriceInput" type="number" placeholder="매수평단 (원)">
+        <input id="qtyInput" type="number" placeholder="수량(선택)">
+        <button onclick="saveHolding()">저장</button>
+      </div>
+      <div id="holdingSection"></div>
+    </section>
 
     <section class="panel">
       <h2>매매 타점 스코어 (단기/중기/장기, 참고용)</h2>
@@ -313,6 +351,7 @@ function render(d) {
     <div class="note">업데이트: ${d.updated_at ? new Date(d.updated_at).toLocaleString('ko-KR') : '-'}</div>
   `;
 
+  renderHolding(d);
   renderScores(scores);
   renderTechnical(d.technical || {});
   renderSupplyDemand(d.supply_demand || {});
@@ -460,6 +499,87 @@ function renderSupplyDemand(sd) {
       <tr><td>개인 순매수 합계</td><td>${fmt(sd.individual_net_sum)}</td></tr>
     </table>
     <div class="note">연속일수: 음수=연속 순매도, 양수=연속 순매수</div>
+  `;
+}
+
+function getHoldingKey(code) {
+  return `cfit_holding_${code}`;
+}
+
+function loadHolding(code) {
+  try {
+    const raw = localStorage.getItem(getHoldingKey(code));
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveHolding() {
+  if (!lastData) return;
+  const code = lastData.stock_code;
+  const avgPrice = parseFloat(document.getElementById('avgPriceInput').value);
+  const qty = parseFloat(document.getElementById('qtyInput').value) || null;
+  if (!avgPrice) return;
+  localStorage.setItem(getHoldingKey(code), JSON.stringify({ avgPrice, qty }));
+  renderHolding(lastData);
+}
+
+function suggestAction(score, returnPct) {
+  if (score == null) return '데이터 부족';
+  if (score >= 65) {
+    if (returnPct != null && returnPct < 0) return '점수 양호 + 평단 이하 → 분할매수 고려';
+    return '점수 양호 → 보유/추가매수 고려';
+  }
+  if (score <= 35) {
+    if (returnPct != null && returnPct > 0) return '점수 부진 + 수익 중 → 일부 익절 고려';
+    if (returnPct != null && returnPct < -10) return '점수 부진 + 손실 확대 → 손절 라인 점검';
+    return '점수 부진 → 신규매수 보류';
+  }
+  return '중립 → 관망';
+}
+
+function renderHolding(d) {
+  const code = d.stock_code;
+  const holding = loadHolding(code);
+
+  const avgInput = document.getElementById('avgPriceInput');
+  const qtyInput = document.getElementById('qtyInput');
+  if (avgInput) avgInput.value = holding?.avgPrice ?? '';
+  if (qtyInput) qtyInput.value = holding?.qty ?? '';
+
+  const el = document.getElementById('holdingSection');
+  if (!holding || !holding.avgPrice) {
+    el.innerHTML = '<div class="note">매수평단을 입력하고 저장하면 구간별 참고 의견이 표시됩니다.</div>';
+    return;
+  }
+
+  const currentPrice = (d.price || {}).current_price;
+  const returnPct = currentPrice ? ((currentPrice - holding.avgPrice) / holding.avgPrice * 100) : null;
+  const profitAmount = (currentPrice && holding.qty)
+    ? Math.round((currentPrice - holding.avgPrice) * holding.qty) : null;
+
+  const scores = d.scores || {};
+  const rows = [
+    { label: '단기', score: (scores.short_term || {}).score },
+    { label: '중기', score: (scores.mid_term || {}).score },
+    { label: '장기', score: (scores.long_term || {}).score },
+  ];
+
+  let profitLine = '';
+  if (returnPct != null) {
+    const cls = returnPct >= 0 ? 'up' : 'down';
+    profitLine = `<div class="value ${cls}" style="font-size:20px;margin-bottom:10px;">
+      평가손익률 ${returnPct.toFixed(1)}%${profitAmount != null ? ` (${profitAmount.toLocaleString()}원)` : ''}
+    </div>`;
+  }
+
+  el.innerHTML = profitLine + `
+    <table>
+      <tr><th>구간</th><th>점수</th><th>참고 의견</th></tr>
+      ${rows.map(r => `<tr><td>${r.label}</td><td>${r.score ?? '-'}</td><td>${suggestAction(r.score, returnPct)}</td></tr>`).join('')}
+    </table>
+    <div class="note">매수평단·점수를 조합한 규칙 기반 참고 문구입니다. 투자 조언이 아니며 최종 판단은 본인 책임입니다.</div>
   `;
 }
 
