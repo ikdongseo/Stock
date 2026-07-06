@@ -22,11 +22,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from dart_client import DartClient
-from consensus_scraper import get_consensus, get_realtime_price
+from consensus_scraper import get_consensus, get_realtime_price, get_supply_demand_trend
 from peer_analysis import get_domestic_peer_comparison, get_us_peer_comparison
-from annual_forecast import get_annual_forecast
+from manual_forecasts import get_manual_annual_forecast
+from technical import get_technical_snapshot
 from collect_stock import (
-    compute_growth, compute_forward_per, compute_week52_position, attractiveness_score,
+    compute_growth, compute_forward_per, compute_week52_position,
+    compute_short_term_score, compute_mid_term_score, compute_long_term_score,
     build_price_info,
 )
 
@@ -96,11 +98,19 @@ def _collect(stock_code: str) -> dict:
     except Exception as e:
         us_peers = {"error": str(e)}
 
-    annual_forecast = []
+    annual_forecast = get_manual_annual_forecast(stock_code)
+
+    technical = {}
     try:
-        annual_forecast = get_annual_forecast(stock_code, debug=True)
+        technical = get_technical_snapshot(stock_code)
     except Exception as e:
-        annual_forecast = {"error": str(e)}
+        technical = {"error": str(e)}
+
+    supply_demand = {}
+    try:
+        supply_demand = get_supply_demand_trend(stock_code)
+    except Exception as e:
+        supply_demand = {"error": str(e)}
 
     current_price = price_info.get("current_price")
     latest_net_income = growth_series[-1].get("당기순이익") if growth_series else None
@@ -111,6 +121,12 @@ def _collect(stock_code: str) -> dict:
     week52 = compute_week52_position(
         current_price, consensus.get("week52_high"), consensus.get("week52_low")
     )
+
+    target_upside_pct = None
+    if consensus.get("target_price") and current_price:
+        target_upside_pct = round(
+            (consensus["target_price"] - current_price) / current_price * 100, 1
+        )
 
     return {
         "stock_code": stock_code,
@@ -123,10 +139,13 @@ def _collect(stock_code: str) -> dict:
         "week52": week52,
         "sector_comparison": {"domestic": domestic_peers, "us": us_peers},
         "annual_forecast": annual_forecast,
-        "attractiveness": attractiveness_score(
-            growth_series, consensus.get("target_price"), current_price,
-            week52.get("position_pct"),
-        ),
+        "technical": technical,
+        "supply_demand": supply_demand,
+        "scores": {
+            "short_term": compute_short_term_score(technical, price_info.get("prev_diff")),
+            "mid_term": compute_mid_term_score(supply_demand, target_upside_pct),
+            "long_term": compute_long_term_score(growth_series, target_upside_pct, week52.get("position_pct")),
+        },
         "recent_disclosures": [
             {"title": d.get("report_nm"), "date": d.get("rcept_dt"), "rcept_no": d.get("rcept_no")}
             for d in disclosures[:15]
