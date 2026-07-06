@@ -1,6 +1,6 @@
 """
-종목 하나에 대해 DART 재무 시계열 + 현재가 + 컨센서스 + 동종업계 비교 + 향후 실적 전망을 모아
-성장성/포워드 PER/매력도 스코어를 계산해 data/{종목코드}.json 으로 저장합니다.
+종목 하나에 대해 DART 재무 시계열 + 현재가 + 컨센서스 + 동종업계 비교 + 기술적지표/수급을 모아
+단기/중기/장기 스코어를 계산해 data/{종목코드}.json 으로 저장합니다.
 
 실행 예:
   export DART_API_KEY=...
@@ -12,9 +12,10 @@ import datetime
 from pathlib import Path
 
 from dart_client import DartClient
-from consensus_scraper import get_consensus, get_realtime_price
+from consensus_scraper import get_consensus, get_realtime_price, get_supply_demand_trend
 from peer_analysis import get_domestic_peer_comparison, get_us_peer_comparison
-from annual_forecast import get_annual_forecast
+from manual_forecasts import get_manual_annual_forecast
+from technical import get_technical_snapshot
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 
@@ -87,42 +88,119 @@ def compute_week52_position(current_price: float | None, week52_high: float | No
     return {"position_pct": round(pct, 1)}
 
 
-def attractiveness_score(growth_series: list[dict], target_price: float | None,
-                          current_price: float | None,
-                          week52_position_pct: float | None) -> dict:
+def compute_short_term_score(technical: dict, prev_diff: float | None) -> dict:
     """
-    매력도 스코어 v3 (기준점 50 + 아래 3개 요소 가감).
-    섹터 평균 PER 비교는 하나의 숫자로 뭉뚱그리면 왜곡이 커서 점수에서 제외했다.
-    대신 대시보드에 종목별 PER 비교 테이블을 따로 두고 직접 판단하도록 한다.
-    이건 확정된 매수/매도 신호가 아니라 여러 지표를 한눈에 보기 위한 참고용 지표입니다.
+    단기 스코어 (며칠~몇 주, 추세추종/모멘텀 관점). 기준점 50.
+    - 이동평균 정배열/역배열
+    - RSI 과매수/과매도
+    - MACD 히스토그램 방향(상승/하락 모멘텀)
+    - 거래량 급증 + 당일 등락 방향 결합
+    """
+    if technical.get("error"):
+        return {"score": None, "note": technical["error"]}
 
-    1) 최근 매출 YoY 성장률
-    2) 목표주가 대비 괴리율 (가중치 0.5)
-    3) 52주 밴드 내 위치 (가중치 작게, 낮을수록 약간 가점 - 평균회귀 관점의 참고용 신호일 뿐
-       하락추세일 수도 있으니 기술적 분석(이동평균 등) 없이는 확정적 신호로 보지 말 것)
+    score = 50
+    factors = {}
+
+    alignment = technical.get("ma_alignment")
+    if alignment == "정배열":
+        score += 15
+    elif alignment == "역배열":
+        score -= 15
+    factors["ma_alignment"] = alignment
+
+    rsi14 = technical.get("rsi14")
+    if rsi14 is not None:
+        if rsi14 < 30:
+            score += 10  # 과매도 - 반등 기대
+        elif rsi14 > 70:
+            score -= 10  # 과매수 - 조정 위험
+    factors["rsi14"] = rsi14
+
+    histogram = (technical.get("macd") or {}).get("histogram")
+    if histogram is not None:
+        score += 10 if histogram > 0 else (-10 if histogram < 0 else 0)
+    factors["macd_histogram"] = histogram
+
+    surge = technical.get("volume_surge_ratio")
+    if surge is not None and surge > 1.5:
+        if prev_diff is not None and prev_diff > 0:
+            score += 10  # 거래량 실리며 상승 - 관심 집중
+        elif prev_diff is not None and prev_diff < 0:
+            score -= 5   # 거래량 실리며 하락 - 투매 경계
+    factors["volume_surge_ratio"] = surge
+
+    return {
+        "score": round(max(0, min(100, score)), 1),
+        "factors": factors,
+        "note": "이동평균 배열 + RSI + MACD + 거래량. 확정 매매신호 아님(참고용).",
+    }
+
+
+def compute_mid_term_score(supply_demand: dict, target_upside_pct: float | None) -> dict:
+    """
+    중기 스코어 (몇 주~1분기, 수급/컨센서스 관점). 기준점 50.
+    - 외국인 연속 순매수/순매도 일수
+    - 최근 며칠 외국인 순매수 합 방향
+    - 증권가 목표주가 대비 괴리율
+    """
+    score = 50
+    factors = {}
+
+    if not supply_demand.get("error"):
+        streak = supply_demand.get("foreigner_streak_days") or 0
+        score += max(-15, min(15, streak * 3))
+        factors["foreigner_streak_days"] = streak
+
+        net_sum = supply_demand.get("foreigner_net_sum")
+        if net_sum is not None:
+            score += 10 if net_sum > 0 else (-10 if net_sum < 0 else 0)
+        factors["foreigner_net_sum"] = net_sum
+
+    if target_upside_pct is not None:
+        score += max(-15, min(15, target_upside_pct * 0.3))
+    factors["target_upside_pct"] = target_upside_pct
+
+    return {
+        "score": round(max(0, min(100, score)), 1),
+        "factors": factors,
+        "note": "외국인 수급 추이 + 목표주가 괴리율. 확정 매매신호 아님(참고용).",
+    }
+
+
+def compute_long_term_score(growth_series: list[dict], target_upside_pct: float | None,
+                             week52_position_pct: float | None) -> dict:
+    """
+    장기 스코어 (분기~년, 밸류에이션/펀더멘털 관점). 기준점 50.
+    - 최근 매출 YoY 성장률
+    - 목표주가 대비 괴리율
+    - 52주 밴드 내 위치 (저점 근처 소폭 가점)
+    참고: 자기 과거 PER 밴드 대비 위치는 과거 분기별 EPS 시계열이 있어야 정확히 계산되는데
+    아직 없어서 다음 단계 과제로 남겨둔다.
     """
     latest = growth_series[-1] if growth_series else {}
     revenue_yoy = latest.get("매출액_YoY(%)")
 
-    upside_pct = None
-    if target_price and current_price:
-        upside_pct = round((target_price - current_price) / current_price * 100, 1)
-
     score = 50
+    factors = {}
+
     if revenue_yoy is not None:
         score += min(max(revenue_yoy, -20), 20)
-    if upside_pct is not None:
-        score += min(max(upside_pct, -30), 30) * 0.5
+    factors["revenue_yoy_pct"] = revenue_yoy
+
+    if target_upside_pct is not None:
+        score += min(max(target_upside_pct, -30), 30) * 0.5
+    factors["target_upside_pct"] = target_upside_pct
+
     if week52_position_pct is not None:
-        score += (50 - week52_position_pct) * 0.1  # 저점 근처일수록 소폭 가점
+        score += (50 - week52_position_pct) * 0.1
+    factors["week52_position_pct"] = week52_position_pct
 
     return {
-        "score": round(score, 1),
-        "revenue_yoy_pct": revenue_yoy,
-        "target_upside_pct": upside_pct,
-        "week52_position_pct": week52_position_pct,
-        "note": "v3 - 성장률+목표주가 괴리율+52주위치 가중합. 섹터PER은 비교테이블로 별도 제공, "
-                "점수엔 미반영. 이동평균 등 기술적 분석도 아직 미반영. 확정 매매신호 아님(참고용).",
+        "score": round(max(0, min(100, score)), 1),
+        "factors": factors,
+        "note": "성장률 + 목표주가 괴리율 + 52주위치. 자기 과거 PER밴드 비교는 아직 미반영. "
+                "확정 매매신호 아님(참고용).",
     }
 
 
@@ -168,11 +246,19 @@ def main(stock_code: str):
     except Exception as e:
         us_peers = {"error": str(e)}
 
-    annual_forecast = []
+    annual_forecast = get_manual_annual_forecast(stock_code)
+
+    technical = {}
     try:
-        annual_forecast = get_annual_forecast(stock_code)
+        technical = get_technical_snapshot(stock_code)
     except Exception as e:
-        annual_forecast = {"error": str(e)}
+        technical = {"error": str(e)}
+
+    supply_demand = {}
+    try:
+        supply_demand = get_supply_demand_trend(stock_code)
+    except Exception as e:
+        supply_demand = {"error": str(e)}
 
     current_price = price_info.get("current_price")
     latest_net_income = growth_series[-1].get("당기순이익") if growth_series else None
@@ -183,6 +269,12 @@ def main(stock_code: str):
     week52 = compute_week52_position(
         current_price, consensus.get("week52_high"), consensus.get("week52_low")
     )
+
+    target_upside_pct = None
+    if consensus.get("target_price") and current_price:
+        target_upside_pct = round(
+            (consensus["target_price"] - current_price) / current_price * 100, 1
+        )
 
     result = {
         "stock_code": stock_code,
@@ -198,10 +290,13 @@ def main(stock_code: str):
             "us": us_peers,
         },
         "annual_forecast": annual_forecast,
-        "attractiveness": attractiveness_score(
-            growth_series, consensus.get("target_price"), current_price,
-            week52.get("position_pct"),
-        ),
+        "technical": technical,
+        "supply_demand": supply_demand,
+        "scores": {
+            "short_term": compute_short_term_score(technical, price_info.get("prev_diff")),
+            "mid_term": compute_mid_term_score(supply_demand, target_upside_pct),
+            "long_term": compute_long_term_score(growth_series, target_upside_pct, week52.get("position_pct")),
+        },
         "recent_disclosures": [
             {
                 "title": d.get("report_nm"),
