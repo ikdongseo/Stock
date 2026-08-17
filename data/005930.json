@@ -1,31 +1,31 @@
 {
   "stock_code": "005930",
   "corp_name": "삼성전자",
-  "updated_at": "2026-08-14T08:49:32.498929",
+  "updated_at": "2026-08-17T08:10:22.909686",
   "financials_yearly": [
     {
       "year": 2022,
-      "매출액": 302231360000000,
-      "영업이익": 43376630000000
+      "영업이익": 43376630000000,
+      "매출액": 302231360000000
     },
     {
       "year": 2023,
-      "매출액": 258935494000000,
       "영업이익": 6566976000000,
+      "매출액": 258935494000000,
       "매출액_YoY(%)": -14.3,
       "영업이익_YoY(%)": -84.9
     },
     {
       "year": 2024,
-      "매출액": 300870903000000,
       "영업이익": 32725961000000,
+      "매출액": 300870903000000,
       "매출액_YoY(%)": 16.2,
       "영업이익_YoY(%)": 398.3
     },
     {
       "year": 2025,
-      "매출액": 333605938000000,
       "영업이익": 43601051000000,
+      "매출액": 333605938000000,
       "매출액_YoY(%)": 10.9,
       "영업이익_YoY(%)": 33.2
     }
@@ -35,7 +35,7 @@
     "prev_diff": 6500,
     "prev_diff_rate": 2.43,
     "market_status": "CLOSE",
-    "traded_at": "2026-08-14T17:49:24.316199+09:00",
+    "traded_at": "2026-08-14T20:00:00.000000+09:00",
     "per": 22.19,
     "eps": 12372.0,
     "source": "naver_realtime"
@@ -43,7 +43,7 @@
   "consensus": {
     "target_price": 491875,
     "recomm_mean": 4.04,
-    "consensus_date": "2026-08-13",
+    "consensus_date": "2026-08-14",
     "forward_eps": 47821.0,
     "forward_per": 5.74,
     "current_per": 22.19,
@@ -51,10 +51,10 @@
     "week52_high": 380000.0,
     "week52_low": 67500.0,
     "industry_code": "278",
-    "current_price": 268000,
-    "prev_diff": 12500,
+    "current_price": 274500,
+    "prev_diff": 6500,
     "prev_diff_text": "상승",
-    "trade_date": "20260813"
+    "trade_date": "20260814"
   },
   "forward_valuation": {
     "forward_eps": 47821.0,
@@ -123,10 +123,10 @@
   },
   "supply_demand": {
     "days_used": 5,
-    "foreigner_net_sum": 1731784.0,
-    "institution_net_sum": 7302597.0,
-    "individual_net_sum": -9515575.0,
-    "foreigner_streak_days": -1
+    "foreigner_net_sum": 8382584.0,
+    "institution_net_sum": 5435073.0,
+    "individual_net_sum": -13198538.0,
+    "foreigner_streak_days": 1
   },
   "scores": {
     "short_term": {
@@ -140,10 +140,10 @@
       "note": "이동평균 배열 + RSI + MACD + 거래량. 확정 매매신호 아님(참고용)."
     },
     "mid_term": {
-      "score": 72,
+      "score": 78,
       "factors": {
-        "foreigner_streak_days": -1,
-        "foreigner_net_sum": 1731784.0,
+        "foreigner_streak_days": 1,
+        "foreigner_net_sum": 8382584.0,
         "target_upside_pct": 79.2
       },
       "note": "외국인 수급 추이 + 목표주가 괴리율. 확정 매매신호 아님(참고용)."
