@@ -1,7 +1,7 @@
 {
   "stock_code": "005930",
   "corp_name": "삼성전자",
-  "updated_at": "2026-09-15T12:53:34.821246",
+  "updated_at": "2026-09-16T12:48:16.740639",
   "financials_yearly": [
     {
       "year": 2022,
@@ -31,39 +31,39 @@
     }
   ],
   "price": {
-    "current_price": 250500,
-    "prev_diff": 1500,
-    "prev_diff_rate": 0.6,
+    "current_price": 253500,
+    "prev_diff": 5000,
+    "prev_diff_rate": 2.01,
     "market_status": "CLOSE",
-    "traded_at": "2026-09-15T20:00:00.000000+09:00",
-    "per": 11.24,
+    "traded_at": "2026-09-16T20:00:00.000000+09:00",
+    "per": 11.37,
     "eps": 22292.0,
     "source": "naver_realtime"
   },
   "consensus": {
-    "target_price": 488409,
-    "recomm_mean": 4.05,
-    "consensus_date": "2026-09-14",
-    "forward_eps": 48239.0,
-    "forward_per": 5.19,
-    "current_per": 11.24,
+    "target_price": 487045,
+    "recomm_mean": 4.0,
+    "consensus_date": "2026-09-15",
+    "forward_eps": 48189.0,
+    "forward_per": 5.26,
+    "current_per": 11.37,
     "current_eps": 22292.0,
     "week52_high": 380000.0,
-    "week52_low": 76300.0,
+    "week52_low": 77100.0,
     "industry_code": "278",
-    "current_price": 250500,
-    "prev_diff": 1500,
+    "current_price": 253500,
+    "prev_diff": 5000,
     "prev_diff_text": "상승",
-    "trade_date": "20260915"
+    "trade_date": "20260916"
   },
   "forward_valuation": {
-    "forward_eps": 48239.0,
-    "forward_per": 5.19,
+    "forward_eps": 48189.0,
+    "forward_per": 5.26,
     "is_estimate": true,
     "note": "증권가 컨센서스 추정 EPS 기준 (네이버 모바일증권 API)"
   },
   "week52": {
-    "position_pct": 57.4
+    "position_pct": 58.2
   },
   "sector_comparison": {
     "domestic": {
@@ -72,32 +72,32 @@
         {
           "code": "000660",
           "name": "SK하이닉스",
-          "per": 7.63,
-          "forward_per": 4.9
+          "per": 7.83,
+          "forward_per": 5.03
         },
         {
           "code": "402340",
           "name": "SK스퀘어",
-          "per": 4.09,
-          "forward_per": 2.97
+          "per": 4.1,
+          "forward_per": 2.98
         },
         {
           "code": "042700",
           "name": "한미반도체",
-          "per": 96.57,
+          "per": 97.21,
           "forward_per": null
         },
         {
           "code": "036930",
           "name": "주성엔지니어링",
-          "per": 1279.87,
+          "per": 1301.95,
           "forward_per": null
         },
         {
           "code": "007660",
           "name": "이수페타시스",
-          "per": 38.57,
-          "forward_per": 28.05
+          "per": 39.26,
+          "forward_per": 28.55
         }
       ]
     },
@@ -109,23 +109,23 @@
     }
   },
   "technical": {
-    "ma5": 259400.0,
-    "ma20": 260600.0,
-    "ma60": 269091.7,
+    "ma5": 256200.0,
+    "ma20": 260900.0,
+    "ma60": 267425.0,
     "ma_alignment": "역배열",
-    "rsi14": 45.5,
+    "rsi14": 47.1,
     "macd": {
-      "macd": -647.32,
-      "signal": 96.0,
-      "histogram": -743.32
+      "macd": -1022.72,
+      "signal": -127.74,
+      "histogram": -894.98
     },
-    "volume_surge_ratio": 0.6
+    "volume_surge_ratio": 0.62
   },
   "supply_demand": {
     "days_used": 5,
-    "foreigner_net_sum": -16739565.0,
-    "institution_net_sum": -340434.0,
-    "individual_net_sum": 7240075.0,
+    "foreigner_net_sum": -15762243.0,
+    "institution_net_sum": -420342.0,
+    "individual_net_sum": 6429939.0,
     "foreigner_streak_days": -5
   },
   "scores": {
@@ -133,9 +133,9 @@
       "score": 25,
       "factors": {
         "ma_alignment": "역배열",
-        "rsi14": 45.5,
-        "macd_histogram": -743.32,
-        "volume_surge_ratio": 0.6
+        "rsi14": 47.1,
+        "macd_histogram": -894.98,
+        "volume_surge_ratio": 0.62
       },
       "note": "이동평균 배열 + RSI + MACD + 거래량. 확정 매매신호 아님(참고용)."
     },
@@ -143,17 +143,17 @@
       "score": 40,
       "factors": {
         "foreigner_streak_days": -5,
-        "foreigner_net_sum": -16739565.0,
-        "target_upside_pct": 95.0
+        "foreigner_net_sum": -15762243.0,
+        "target_upside_pct": 92.1
       },
       "note": "외국인 수급 추이 + 목표주가 괴리율. 확정 매매신호 아님(참고용)."
     },
     "long_term": {
-      "score": 75.2,
+      "score": 75.1,
       "factors": {
         "revenue_yoy_pct": 10.9,
-        "target_upside_pct": 95.0,
-        "week52_position_pct": 57.4
+        "target_upside_pct": 92.1,
+        "week52_position_pct": 58.2
       },
       "note": "성장률 + 목표주가 괴리율 + 52주위치. 자기 과거 PER밴드 비교는 아직 미반영. 확정 매매신호 아님(참고용)."
     }
