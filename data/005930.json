@@ -1,69 +1,69 @@
 {
   "stock_code": "005930",
   "corp_name": "삼성전자",
-  "updated_at": "2026-10-29T14:38:49.560847",
+  "updated_at": "2026-11-02T17:25:24.256203",
   "financials_yearly": [
     {
       "year": 2022,
-      "매출액": 302231360000000,
-      "영업이익": 43376630000000
+      "영업이익": 43376630000000,
+      "매출액": 302231360000000
     },
     {
       "year": 2023,
-      "매출액": 258935494000000,
       "영업이익": 6566976000000,
+      "매출액": 258935494000000,
       "매출액_YoY(%)": -14.3,
       "영업이익_YoY(%)": -84.9
     },
     {
       "year": 2024,
-      "매출액": 300870903000000,
       "영업이익": 32725961000000,
+      "매출액": 300870903000000,
       "매출액_YoY(%)": 16.2,
       "영업이익_YoY(%)": 398.3
     },
     {
       "year": 2025,
-      "매출액": 333605938000000,
       "영업이익": 43601051000000,
+      "매출액": 333605938000000,
       "매출액_YoY(%)": 10.9,
       "영업이익_YoY(%)": 33.2
     }
   ],
   "price": {
-    "current_price": 230500,
-    "prev_diff": -11500,
-    "prev_diff_rate": -4.75,
+    "current_price": 230000,
+    "prev_diff": 5000,
+    "prev_diff_rate": 2.22,
     "market_status": "CLOSE",
-    "traded_at": "2026-10-29T20:00:00.000000+09:00",
-    "per": 10.34,
+    "traded_at": "2026-11-02T20:00:00.000000+09:00",
+    "per": 10.32,
     "eps": 22292.0,
     "source": "naver_realtime"
   },
   "consensus": {
-    "target_price": 492500,
+    "target_price": 490227,
     "recomm_mean": 4.0,
-    "consensus_date": "2026-10-28",
-    "forward_eps": 45531.0,
-    "forward_per": 5.06,
-    "current_per": 10.34,
+    "consensus_date": "2026-10-30",
+    "forward_eps": 45983.0,
+    "forward_per": 5.0,
+    "current_per": 10.32,
     "current_eps": 22292.0,
     "week52_high": 380000.0,
     "week52_low": 93500.0,
     "industry_code": "278",
-    "current_price": 230500,
-    "prev_diff": -11500,
-    "prev_diff_text": "하락",
-    "trade_date": "20261029"
+    "current_price": 230000,
+    "prev_diff": 5000,
+    "prev_diff_text": "상승",
+    "trade_date": "20261102"
   },
   "forward_valuation": {
-    "forward_eps": 45531.0,
-    "forward_per": 5.06,
+    "forward_eps": 45983.0,
+    "forward_per": 5.0,
     "is_estimate": true,
     "note": "증권가 컨센서스 추정 EPS 기준 (네이버 모바일증권 API)"
   },
   "week52": {
-    "position_pct": 47.8
+    "position_pct": 47.6
   },
   "sector_comparison": {
     "domestic": {
@@ -72,32 +72,32 @@
         {
           "code": "000660",
           "name": "SK하이닉스",
-          "per": 6.76,
-          "forward_per": 4.25
+          "per": 6.6,
+          "forward_per": 4.16
         },
         {
           "code": "402340",
           "name": "SK스퀘어",
-          "per": 3.84,
-          "forward_per": 2.55
+          "per": 3.86,
+          "forward_per": 2.56
         },
         {
           "code": "042700",
           "name": "한미반도체",
-          "per": 83.52,
+          "per": 82.45,
           "forward_per": null
         },
         {
           "code": "036930",
           "name": "주성엔지니어링",
-          "per": 1140.91,
+          "per": 1100.0,
           "forward_per": null
         },
         {
           "code": "007660",
           "name": "이수페타시스",
-          "per": 33.64,
-          "forward_per": 24.63
+          "per": 32.32,
+          "forward_per": 23.66
         }
       ]
     },
@@ -109,42 +109,42 @@
     }
   },
   "technical": {
-    "ma5": 225500.0,
-    "ma20": 238350.0,
-    "ma60": 251966.7,
+    "ma5": 230200.0,
+    "ma20": 233675.0,
+    "ma60": 251108.3,
     "ma_alignment": "역배열",
-    "rsi14": 46.5,
+    "rsi14": 47.0,
     "macd": {
-      "macd": -9475.39,
-      "signal": -10429.25,
-      "histogram": 953.86
+      "macd": -8601.65,
+      "signal": -9910.39,
+      "histogram": 1308.75
     },
-    "volume_surge_ratio": 1.39
+    "volume_surge_ratio": 0.8
   },
   "supply_demand": {
     "days_used": 5,
-    "foreigner_net_sum": 202706.0,
-    "institution_net_sum": 3533676.0,
-    "individual_net_sum": -3781951.0,
-    "foreigner_streak_days": -1
+    "foreigner_net_sum": 1499182.0,
+    "institution_net_sum": 4753935.0,
+    "individual_net_sum": -5942009.0,
+    "foreigner_streak_days": 1
   },
   "scores": {
     "short_term": {
       "score": 45,
       "factors": {
         "ma_alignment": "역배열",
-        "rsi14": 46.5,
-        "macd_histogram": 953.86,
-        "volume_surge_ratio": 1.39
+        "rsi14": 47.0,
+        "macd_histogram": 1308.75,
+        "volume_surge_ratio": 0.8
       },
       "note": "이동평균 배열 + RSI + MACD + 거래량. 확정 매매신호 아님(참고용)."
     },
     "mid_term": {
-      "score": 72,
+      "score": 78,
       "factors": {
-        "foreigner_streak_days": -1,
-        "foreigner_net_sum": 202706.0,
-        "target_upside_pct": 113.7
+        "foreigner_streak_days": 1,
+        "foreigner_net_sum": 1499182.0,
+        "target_upside_pct": 113.1
       },
       "note": "외국인 수급 추이 + 목표주가 괴리율. 확정 매매신호 아님(참고용)."
     },
@@ -152,13 +152,28 @@
       "score": 76.1,
       "factors": {
         "revenue_yoy_pct": 10.9,
-        "target_upside_pct": 113.7,
-        "week52_position_pct": 47.8
+        "target_upside_pct": 113.1,
+        "week52_position_pct": 47.6
       },
       "note": "성장률 + 목표주가 괴리율 + 52주위치. 자기 과거 PER밴드 비교는 아직 미반영. 확정 매매신호 아님(참고용)."
     }
   },
   "recent_disclosures": [
+    {
+      "title": "임원ㆍ주요주주특정증권등소유상황보고서",
+      "date": "20261030",
+      "rcept_no": "20261030000719"
+    },
+    {
+      "title": "주식등의대량보유상황보고서(일반)",
+      "date": "20261030",
+      "rcept_no": "20261030000716"
+    },
+    {
+      "title": "특수관계인으로부터주식의취득",
+      "date": "20261030",
+      "rcept_no": "20261030000586"
+    },
     {
       "title": "기타경영사항(자율공시)              ",
       "date": "20261029",
@@ -218,21 +233,6 @@
       "title": "현금ㆍ현물배당결정              ",
       "date": "20261029",
       "rcept_no": "20261029800101"
-    },
-    {
-      "title": "연결재무제표기준영업(잠정)실적(공정공시)              ",
-      "date": "20261029",
-      "rcept_no": "20261029800087"
-    },
-    {
-      "title": "임원ㆍ주요주주특정증권등소유상황보고서",
-      "date": "20261026",
-      "rcept_no": "20261026000017"
-    },
-    {
-      "title": "주식등의대량보유상황보고서(일반)",
-      "date": "20261023",
-      "rcept_no": "20261023000484"
     }
   ]
 }
