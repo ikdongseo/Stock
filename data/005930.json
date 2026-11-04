@@ -1,7 +1,7 @@
 {
   "stock_code": "005930",
   "corp_name": "삼성전자",
-  "updated_at": "2026-11-03T15:28:28.082357",
+  "updated_at": "2026-11-04T15:40:50.641166",
   "financials_yearly": [
     {
       "year": 2022,
@@ -31,22 +31,22 @@
     }
   ],
   "price": {
-    "current_price": 222000,
-    "prev_diff": -7000,
-    "prev_diff_rate": -3.06,
+    "current_price": 221500,
+    "prev_diff": 2000,
+    "prev_diff_rate": 0.91,
     "market_status": "CLOSE",
-    "traded_at": "2026-11-03T20:00:00.000000+09:00",
-    "per": 9.96,
+    "traded_at": "2026-11-04T20:00:00.000000+09:00",
+    "per": 9.94,
     "eps": 22292.0,
     "source": "naver_realtime"
   },
   "consensus": {
-    "target_price": 479474,
+    "target_price": 477500,
     "recomm_mean": 4.0,
-    "consensus_date": "2026-11-02",
-    "forward_eps": 45817.0,
+    "consensus_date": "2026-11-03",
+    "forward_eps": 45644.0,
     "forward_per": 4.85,
-    "current_per": 9.96,
+    "current_per": 9.94,
     "current_eps": 22292.0,
     "week52_high": 380000.0,
     "week52_low": 93500.0,
@@ -57,13 +57,13 @@
     "trade_date": "20261103"
   },
   "forward_valuation": {
-    "forward_eps": 45817.0,
+    "forward_eps": 45644.0,
     "forward_per": 4.85,
     "is_estimate": true,
     "note": "증권가 컨센서스 추정 EPS 기준 (네이버 모바일증권 API)"
   },
   "week52": {
-    "position_pct": 44.9
+    "position_pct": 44.7
   },
   "sector_comparison": {
     "domestic": {
@@ -72,8 +72,8 @@
         {
           "code": "000660",
           "name": "SK하이닉스",
-          "per": 6.3,
-          "forward_per": 3.97
+          "per": 6.33,
+          "forward_per": 4.0
         },
         {
           "code": "402340",
@@ -84,20 +84,20 @@
         {
           "code": "042700",
           "name": "한미반도체",
-          "per": 78.67,
+          "per": 80.3,
           "forward_per": null
         },
         {
           "code": "036930",
           "name": "주성엔지니어링",
-          "per": 1033.12,
+          "per": 1100.65,
           "forward_per": null
         },
         {
           "code": "007660",
           "name": "이수페타시스",
-          "per": 29.91,
-          "forward_per": 21.9
+          "per": 29.95,
+          "forward_per": 21.93
         }
       ]
     },
@@ -109,17 +109,17 @@
     }
   },
   "technical": {
-    "ma5": 229600.0,
-    "ma20": 230975.0,
-    "ma60": 250808.3,
+    "ma5": 224900.0,
+    "ma20": 228400.0,
+    "ma60": 250400.0,
     "ma_alignment": "역배열",
-    "rsi14": 44.2,
+    "rsi14": 44.0,
     "macd": {
-      "macd": -8460.75,
-      "signal": -9620.47,
-      "histogram": 1159.72
+      "macd": -8293.82,
+      "signal": -9355.14,
+      "histogram": 1061.31
     },
-    "volume_surge_ratio": 0.73
+    "volume_surge_ratio": 1.19
   },
   "supply_demand": {
     "days_used": 5,
@@ -133,9 +133,9 @@
       "score": 45,
       "factors": {
         "ma_alignment": "역배열",
-        "rsi14": 44.2,
-        "macd_histogram": 1159.72,
-        "volume_surge_ratio": 0.73
+        "rsi14": 44.0,
+        "macd_histogram": 1061.31,
+        "volume_surge_ratio": 1.19
       },
       "note": "이동평균 배열 + RSI + MACD + 거래량. 확정 매매신호 아님(참고용)."
     },
@@ -144,7 +144,7 @@
       "factors": {
         "foreigner_streak_days": -1,
         "foreigner_net_sum": -507069.0,
-        "target_upside_pct": 116.0
+        "target_upside_pct": 115.6
       },
       "note": "외국인 수급 추이 + 목표주가 괴리율. 확정 매매신호 아님(참고용)."
     },
@@ -152,13 +152,23 @@
       "score": 76.4,
       "factors": {
         "revenue_yoy_pct": 10.9,
-        "target_upside_pct": 116.0,
-        "week52_position_pct": 44.9
+        "target_upside_pct": 115.6,
+        "week52_position_pct": 44.7
       },
       "note": "성장률 + 목표주가 괴리율 + 52주위치. 자기 과거 PER밴드 비교는 아직 미반영. 확정 매매신호 아님(참고용)."
     }
   },
   "recent_disclosures": [
+    {
+      "title": "최대주주등소유주식변동신고서              ",
+      "date": "20261104",
+      "rcept_no": "20261104800612"
+    },
+    {
+      "title": "자기주식처분결과보고서",
+      "date": "20261104",
+      "rcept_no": "20261104000325"
+    },
     {
       "title": "임원ㆍ주요주주특정증권등소유상황보고서",
       "date": "20261103",
@@ -223,16 +233,6 @@
       "title": "특수관계인에대한출자",
       "date": "20261029",
       "rcept_no": "20261029000501"
-    },
-    {
-      "title": "장래사업ㆍ경영계획(공정공시)              ",
-      "date": "20261029",
-      "rcept_no": "20261029800102"
-    },
-    {
-      "title": "[기재정정]연결재무제표기준영업(잠정)실적(공정공시)              ",
-      "date": "20261029",
-      "rcept_no": "20261029800099"
     }
   ]
 }
