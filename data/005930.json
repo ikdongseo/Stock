@@ -1,69 +1,69 @@
 {
   "stock_code": "005930",
   "corp_name": "삼성전자",
-  "updated_at": "2026-11-18T16:43:19.875357",
+  "updated_at": "2026-11-19T16:46:51.906679",
   "financials_yearly": [
     {
       "year": 2022,
-      "영업이익": 43376630000000,
-      "매출액": 302231360000000
+      "매출액": 302231360000000,
+      "영업이익": 43376630000000
     },
     {
       "year": 2023,
-      "영업이익": 6566976000000,
       "매출액": 258935494000000,
+      "영업이익": 6566976000000,
       "매출액_YoY(%)": -14.3,
       "영업이익_YoY(%)": -84.9
     },
     {
       "year": 2024,
-      "영업이익": 32725961000000,
       "매출액": 300870903000000,
+      "영업이익": 32725961000000,
       "매출액_YoY(%)": 16.2,
       "영업이익_YoY(%)": 398.3
     },
     {
       "year": 2025,
-      "영업이익": 43601051000000,
       "매출액": 333605938000000,
+      "영업이익": 43601051000000,
       "매출액_YoY(%)": 10.9,
       "영업이익_YoY(%)": 33.2
     }
   ],
   "price": {
-    "current_price": 196400,
-    "prev_diff": 6100,
-    "prev_diff_rate": 3.21,
+    "current_price": 197400,
+    "prev_diff": 2700,
+    "prev_diff_rate": 1.39,
     "market_status": "CLOSE",
-    "traded_at": "2026-11-18T20:00:00.000000+09:00",
-    "per": 8.81,
-    "eps": 22292.0,
+    "traded_at": "2026-11-19T20:00:00.000000+09:00",
+    "per": 30.07,
+    "eps": 6564.0,
     "source": "naver_realtime"
   },
   "consensus": {
     "target_price": 465714,
     "recomm_mean": 4.0,
-    "consensus_date": "2026-11-17",
+    "consensus_date": "2026-11-18",
     "forward_eps": 45565.0,
-    "forward_per": 4.31,
-    "current_per": 8.81,
-    "current_eps": 22292.0,
+    "forward_per": 4.33,
+    "current_per": 30.07,
+    "current_eps": 6564.0,
     "week52_high": 380000.0,
     "week52_low": 93500.0,
     "industry_code": "278",
-    "current_price": 196400,
-    "prev_diff": 6100,
+    "current_price": 197400,
+    "prev_diff": 2700,
     "prev_diff_text": "상승",
-    "trade_date": "20261118"
+    "trade_date": "20261119"
   },
   "forward_valuation": {
     "forward_eps": 45565.0,
-    "forward_per": 4.31,
+    "forward_per": 4.33,
     "is_estimate": true,
     "note": "증권가 컨센서스 추정 EPS 기준 (네이버 모바일증권 API)"
   },
   "week52": {
-    "position_pct": 35.9
+    "position_pct": 36.3
   },
   "sector_comparison": {
     "domestic": {
@@ -72,32 +72,32 @@
         {
           "code": "000660",
           "name": "SK하이닉스",
-          "per": 5.19,
-          "forward_per": 3.27
+          "per": 4.55,
+          "forward_per": 3.34
         },
         {
           "code": "402340",
           "name": "SK스퀘어",
-          "per": 2.88,
-          "forward_per": 1.89
+          "per": 2.99,
+          "forward_per": 1.95
         },
         {
           "code": "042700",
           "name": "한미반도체",
-          "per": 72.88,
+          "per": 76.98,
           "forward_per": null
         },
         {
           "code": "036930",
           "name": "주성엔지니어링",
-          "per": 994.81,
+          "per": 210.99,
           "forward_per": null
         },
         {
           "code": "007660",
           "name": "이수페타시스",
-          "per": 29.88,
-          "forward_per": 21.85
+          "per": 30.68,
+          "forward_per": 22.46
         }
       ]
     },
@@ -109,42 +109,42 @@
     }
   },
   "technical": {
-    "ma5": 199340.0,
-    "ma20": 211000.0,
-    "ma60": 241533.3,
+    "ma5": 197520.0,
+    "ma20": 210145.0,
+    "ma60": 240131.7,
     "ma_alignment": "역배열",
-    "rsi14": 41.1,
+    "rsi14": 41.6,
     "macd": {
-      "macd": -11738.96,
-      "signal": -11519.11,
-      "histogram": -219.84
+      "macd": -11350.48,
+      "signal": -11485.39,
+      "histogram": 134.91
     },
-    "volume_surge_ratio": 0.98
+    "volume_surge_ratio": 0.71
   },
   "supply_demand": {
     "days_used": 5,
-    "foreigner_net_sum": -2839626.0,
-    "institution_net_sum": 1220707.0,
-    "individual_net_sum": 1529938.0,
-    "foreigner_streak_days": -3
+    "foreigner_net_sum": -7012490.0,
+    "institution_net_sum": 2317506.0,
+    "individual_net_sum": 4488987.0,
+    "foreigner_streak_days": -4
   },
   "scores": {
     "short_term": {
-      "score": 25,
+      "score": 45,
       "factors": {
         "ma_alignment": "역배열",
-        "rsi14": 41.1,
-        "macd_histogram": -219.84,
-        "volume_surge_ratio": 0.98
+        "rsi14": 41.6,
+        "macd_histogram": 134.91,
+        "volume_surge_ratio": 0.71
       },
       "note": "이동평균 배열 + RSI + MACD + 거래량. 확정 매매신호 아님(참고용)."
     },
     "mid_term": {
-      "score": 46,
+      "score": 43,
       "factors": {
-        "foreigner_streak_days": -3,
-        "foreigner_net_sum": -2839626.0,
-        "target_upside_pct": 137.1
+        "foreigner_streak_days": -4,
+        "foreigner_net_sum": -7012490.0,
+        "target_upside_pct": 135.9
       },
       "note": "외국인 수급 추이 + 목표주가 괴리율. 확정 매매신호 아님(참고용)."
     },
@@ -152,8 +152,8 @@
       "score": 77.3,
       "factors": {
         "revenue_yoy_pct": 10.9,
-        "target_upside_pct": 137.1,
-        "week52_position_pct": 35.9
+        "target_upside_pct": 135.9,
+        "week52_position_pct": 36.3
       },
       "note": "성장률 + 목표주가 괴리율 + 52주위치. 자기 과거 PER밴드 비교는 아직 미반영. 확정 매매신호 아님(참고용)."
     }
